@@ -4,7 +4,7 @@ This repo contains all of the governance contracts for the Polarfox DEX.
 
 ## Deployment Addresses
 
-PFX: `...`
+PFX: `0xB2E62a503a20aD135DE03Ab400001ea03ac212F4`
 
 TreasuryVester: `...`
 
