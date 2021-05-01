@@ -22,7 +22,7 @@ LiquidityPoolManager:         `...`
 
 ### Fuji Testnet
 
-PFX: `0xB2E62a503a20aD135DE03Ab400001ea03ac212F4`
+PFX: `0x90E487E9a08fF29B2F97ECd0eD73886692dF70D1`
 
 TreasuryVester: `...`
 
