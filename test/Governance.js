@@ -17,13 +17,13 @@ const STARTING_VEST_AMOUNT = BigNumber.from('175034246575342000000000');
 const HALVING = 1460;
 const INTERVAL = 86400;
 
-const token0 = Web3.utils.sha3('token0()').slice(0,10);
-const token1 = Web3.utils.sha3('token1()').slice(0,10);
+const token0 = Web3.utils.sha3('token0()').slice(0, 10);
+const token1 = Web3.utils.sha3('token1()').slice(0, 10);
 
 const DELAY = 14 * 24 * 60 * 60
 
-const VOTING_DELAY = 60*60*24
-const VOTING_PERIOD = 60*60*24*3
+const VOTING_DELAY = 60 * 60 * 24
+const VOTING_PERIOD = 60 * 60 * 24 * 3
 
 async function setGovAdmin(latestTime, timelock, governanceAddress) {
     await ethers.provider.send("evm_setNextBlockTimestamp", [latestTime]);
@@ -49,7 +49,7 @@ async function setGovAdmin(latestTime, timelock, governanceAddress) {
 // Start test block
 describe('Governance', function () {
     before(async function () {
-        [ , this.addr2, this.addr3] = await ethers.getSigners();
+        [, this.addr2, this.addr3] = await ethers.getSigners();
 
         this.Governor = await ethers.getContractFactory("GovernorAlpha");
         this.Timelock = await ethers.getContractFactory("Timelock");
@@ -136,12 +136,12 @@ describe('Governance', function () {
             // Set LpManager owner
             await this.lpManager.transferOwnership(this.timelock.address);
             expect(await this.lpManager.isWhitelisted(this.mockPairAvax.address)).to.be.false;
-            await expect(this.lpManager.addWhitelistedPool(this.mockPairAvax.address,1)).to.be.revertedWith('Ownable: caller is not the owner');
+            await expect(this.lpManager.addWhitelistedPool(this.mockPairAvax.address, 1)).to.be.revertedWith('Ownable: caller is not the owner');
 
             const target = this.lpManager.address;
             const value = 0;
             const sig = 'addWhitelistedPool(address,uint256)';
-            const callData = ethers.utils.defaultAbiCoder.encode(['address','uint256'], [this.mockPairAvax.address, 1]);
+            const callData = ethers.utils.defaultAbiCoder.encode(['address', 'uint256'], [this.mockPairAvax.address, 1]);
 
             await ethers.provider.send("evm_setNextBlockTimestamp", [startTime]);
 
