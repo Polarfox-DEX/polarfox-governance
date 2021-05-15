@@ -8,3 +8,4 @@ tenderly.yaml
 coverage/
 coverage.json
 scripts/
+.mnemonic*
