@@ -1,6 +1,8 @@
 require("@nomiclabs/hardhat-waffle");
-//require("@tenderly/hardhat-tenderly");
+
 require("solidity-coverage");
+
+const fs = require('fs');
 
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
@@ -11,6 +13,10 @@ task("accounts", "Prints the list of accounts", async () => {
     console.log(account.address);
   }
 });
+
+const mnemonic = fs.readFileSync('./.mnemonic', 'utf-8').trim()
+if (!mnemonic)
+  throw Error('Missing mnemonic')
 
 /**
  * @type import('hardhat/config').HardhatUserConfig
@@ -37,6 +43,9 @@ module.exports = {
         version: "0.6.11"
       },
       {
+        version: "0.6.12"
+      },
+      {
         version: "0.7.4"
       },
       {
@@ -61,35 +70,26 @@ module.exports = {
     overrides: {
       "contracts/Airdrop.sol": {
         version: "0.8.0",
-        settings: { }
+        settings: {}
       }
     }
   },
   networks: {
-    hardhat: {
-      gasPrice: 470000000000,
-      chainId: 43112,
-      initialDate: "2021-01-01",
-    },
-    avash: {
-      url: 'http://localhost:9650/ext/bc/C/rpc',
-      gasPrice: 470000000000,
-      chainId: 43112,
-      accounts: ["0x56289e99c94b6912bfc12adc093c9b51124f0dc54ac7a766b2bc5ccf558d8027"]
-    },
-    local: {
-      url: 'http://127.0.0.1:8545',
-      gasPrice: 225000000000,
-      chainId: 43112,
-    },
     fuji: {
       url: 'https://api.avax-test.network/ext/bc/C/rpc',
-      gasPrice: 225000000000,
+      // gasPrice: 225000000000,
       chainId: 43113,
+      accounts: {
+        mnemonic
+      },
     },
-    mainnet: {
-      url: 'https://api.avax.network/ext/bc/C/rpc',
-      gasPrice: 225000000000,
+  },
+  namedAccounts: {
+    deployer: {
+      fuji: '0x3b69b2ADCbF43DbaBdF6A14634045b5035Db188C',
+    },
+    devTeam: {
+      fuji: '0x7198c0F3b129e4220E5bFfc5579Aab07016a02CE',
     }
   }
 };
