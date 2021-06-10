@@ -320,6 +320,12 @@ contract Pfx is Ownable {
     /// @notice Initial number of tokens in circulation
     uint256 public constant initialSupply = 269_000_000e18 + 9_250_000e18; // 269 million PFX + 9.25 million PFX (presale)
 
+    /// @notice Maximum value for the burn fee - it cannot be set up above this number
+    uint96 public constant maximumBurnFee = 20; // 5% = 1/20
+
+    /// @notice Maximum value for the dev fee - it cannot be set up above this number
+    uint96 public constant maximumDevFee = 1000; // 0.1% = 1/1000 
+
     /// @notice Current number of tokens in circulation
     uint256 public totalSupply;
 
@@ -727,10 +733,14 @@ contract Pfx is Ownable {
     }
 
     function setBurnFee(uint96 _burnFee) public onlyOwner {
+        // burnFee > maximumBurnFee => 1/burnFee < 1/maximumBurnFee
+        require(_burnFee > maximumBurnFee, 'Pfx::setBurnFee: new burn fee exceeds maximum burn fee');
         burnFee = _burnFee;
     }
 
     function setDevFee(uint96 _devFee) public onlyOwner {
+        // devFee > maximumDevFee => 1/devFee < 1/maximumDevFee
+        require(_devFee > maximumDevFee, 'Pfx::setDevFee: new dev fee exceeds maximum dev fee');
         devFee = _devFee;
     }
 
