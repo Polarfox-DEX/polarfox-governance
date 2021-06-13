@@ -649,7 +649,6 @@ contract Pfx is Ownable {
         uint96 amount
     ) internal {
         require(src != address(0), 'Pfx::_transferTokens: cannot transfer from the zero address');
-        require(dst != address(0), 'Pfx::_transferTokens: cannot transfer to the zero address');
 
         if (isExcludedSrc[src] || isExcludedDst[dst]) _transferExcluded(src, dst, amount);
         else _transferStandard(src, dst, amount);
