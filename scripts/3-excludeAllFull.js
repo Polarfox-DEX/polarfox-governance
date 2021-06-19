@@ -50,8 +50,6 @@ excludeAllFull()
 
 async function excludeFull(accounts, pfx, address) {
     try {
-        const accounts = await web3.eth.getAccounts()
-
         console.log('Excluding', address, 'in full')
 
         await pfx.methods

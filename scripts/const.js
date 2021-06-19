@@ -1,6 +1,8 @@
 const HDWalletProvider = require('@truffle/hdwallet-provider')
 const fs = require('fs')
 
+const EIGHTEEN_ZEROS = '000000000000000000'
+
 const CHAIN_ID = {
     AVALANCHE: 43114,
     FUJI: 43113
@@ -35,6 +37,7 @@ function getProvider(chainId) {
 
 // Export
 module.exports = {
+    EIGHTEEN_ZEROS,
     CHAIN_ID,
     IS_PRODUCTION,
     getProvider
