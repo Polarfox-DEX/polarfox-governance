@@ -1,0 +1,86 @@
+const Web3 = require('web3')
+
+const { IS_PRODUCTION, CHAIN_ID, getProvider } = require('./const')
+const { OWNER_ADDR,
+    TEAM_TREASURY_MULTISIG_ADDR,
+    LIQUIDITY_MINING_MULTISIG_ADDR,
+    AIRDROP_ADDR,
+    TREASURY_VESTER_1,
+    TREASURY_VESTER_2,
+    TREASURY_VESTER_3,
+    TREASURY_VESTER_4 } = require('./governanceConstants')
+
+const pfxContract = require('../artifacts/contracts/PFX.sol/Pfx.json')
+
+const chainId = IS_PRODUCTION ? CHAIN_ID.AVALANCHE : CHAIN_ID.FUJI
+
+const provider = getProvider(chainId)
+
+const web3 = new Web3(provider)
+
+const toExclude = [
+    OWNER_ADDR,
+    TEAM_TREASURY_MULTISIG_ADDR[chainId],
+    LIQUIDITY_MINING_MULTISIG_ADDR[chainId],
+    AIRDROP_ADDR[chainId],
+    TREASURY_VESTER_1[chainId],
+    TREASURY_VESTER_2[chainId],
+    TREASURY_VESTER_3[chainId],
+    TREASURY_VESTER_4[chainId]
+]
+
+const excludeAllFull = async () => {
+    const pfx = new web3.eth.Contract(pfxContract.abi, PFX[chainId])
+
+    try {
+        const accounts = await web3.eth.getAccounts()
+
+        console.log('Attempting to exclude all full from the account', accounts[0])
+
+        toExclude.map(address => await excludeFull(accounts, pfx, address))
+
+        console.log('Token deployed to', deployedToken.options.address)
+    } catch (error) {
+        console.error('An error occurred in excludeAllFull():\n', error)
+    }
+}
+
+excludeAllFull()
+
+async function excludeFull(accounts, pfx, address) {
+    const accounts = await web3.eth.getAccounts()
+
+    console.log('Attempting to exclude airdrop in full from the account', accounts[0])
+    
+    const pfx = new web3.eth.Contract(pfxContract.abi, PFX)
+
+    try {
+        const accounts = await web3.eth.getAccounts()
+
+        console.log('Excluding', address, 'in full')
+
+        await pfx.methods
+            .excludeSrc(
+                address // The account to exclude from fees as source
+            )
+            .send({
+                from: accounts[0]
+            })
+
+        console.log(`excludeSrc(${address}) OK`)
+
+        await pfx.methods
+            .excludeDst(
+                address // The account to exclude from fees as recipient
+            )
+            .send({
+                from: accounts[0]
+            })
+
+        console.log(`excludeDst(${address}) OK`)
+
+        console.log('Done!')
+    } catch (error) {
+        console.log('An error occurred in excludeAirdropFull():', error)
+    }
+}
