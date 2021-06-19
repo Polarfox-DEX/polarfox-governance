@@ -318,7 +318,7 @@ contract Pfx is Ownable {
     uint8 public constant decimals = 18;
 
     /// @notice Initial number of tokens in circulation
-    uint256 public constant initialSupply = 269_000_000e18 + 9_250_000e18; // 269 million PFX + 9.25 million PFX (presale)
+    uint256 public constant initialSupply = 30_000_000e18; // 30 million PFX
 
     /// @notice Maximum value for the burn fee - it cannot be set up above this number
     uint96 public constant maximumBurnFee = 20; // 5% = 1/20
