@@ -49,8 +49,6 @@ const excludeAllFull = async () => {
 excludeAllFull()
 
 async function excludeFull(accounts, pfx, address) {
-  console.log('Attempting to exclude airdrop in full from the account', accounts[0])
-
   try {
     const accounts = await web3.eth.getAccounts()
 
