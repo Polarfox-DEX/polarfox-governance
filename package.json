@@ -6,7 +6,8 @@
   "license": "MIT",
   "scripts": {
     "test": "hardhat test",
-    "compile": "hardhat compile"
+    "compile": "hardhat clean && hardhat compile",
+    "deploy-governance:fuji": "hardhat run scripts/deploy-governance.js --network fuji"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.2",

@@ -15,8 +15,8 @@ task("accounts", "Prints the list of accounts", async () => {
 });
 
 const mnemonic = fs.existsSync('./.mnemonic') ? fs.readFileSync('./.mnemonic', 'utf-8').trim() : ''
-// if (!mnemonic)
-//   throw Error('Missing mnemonic')
+if (!mnemonic)
+  console.log('Missing mnemonic')
 
 /**
  * @type import('hardhat/config').HardhatUserConfig
