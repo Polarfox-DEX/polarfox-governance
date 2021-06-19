@@ -403,8 +403,10 @@ contract Pfx is Ownable {
      * @param _devAddress The initial account to grant all the tokens
      */
     constructor(address _devAddress) public {
-        // All the tokens are sent to this address
+        // All the tokens are sent to msg.sender
         balances[_devAddress] = uint96(initialSupply);
+
+        // The dev address is the address which will receive the dev fees
         devAddress = _devAddress;
         totalSupply = initialSupply;
 

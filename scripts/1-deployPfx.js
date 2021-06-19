@@ -1,7 +1,7 @@
 const Web3 = require('web3')
 
 const { IS_PRODUCTION, CHAIN_ID, getProvider } = require('./const')
-const { OWNER_ADDR } = require('./governanceConstants')
+const { TEAM_TREASURY_MULTISIG_ADDR } = require('./governanceConstants')
 
 const pfx = require('../artifacts/contracts/PFX.sol/Pfx.json')
 
@@ -22,7 +22,7 @@ const deployPfx = async () => {
                 data: pfx.bytecode,
                 arguments: [
                     // The account to give all the initial tokens to
-                    OWNER_ADDR
+                    TEAM_TREASURY_MULTISIG_ADDR[chainId]
                 ]
             })
             .send({
