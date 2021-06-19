@@ -404,7 +404,7 @@ contract Pfx is Ownable {
      */
     constructor(address _devAddress) public {
         // All the tokens are sent to msg.sender
-        balances[_devAddress] = uint96(initialSupply);
+        balances[msg.sender] = uint96(initialSupply);
 
         // The dev address is the address which will receive the dev fees
         devAddress = _devAddress;
