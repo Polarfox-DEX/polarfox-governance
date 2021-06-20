@@ -745,6 +745,12 @@ contract Pfx is Ownable {
         devFee = _devFee;
     }
 
+    function setDevAddress(address _devAddress) public {
+        // Only callable by the dev fee address
+        require(msg.sender == devAddress, 'Pfx::setDevAddress: can only be called by the dev address');
+        devAddress = _devAddress;
+    }
+
     function startBurning() public onlyOwner {
         isBurning = true;
     }
