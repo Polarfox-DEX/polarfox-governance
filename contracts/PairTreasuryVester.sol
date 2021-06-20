@@ -3,7 +3,7 @@ pragma solidity ^0.5.16;
 import "./SafeMath.sol";
 
 /**
- * The Polarfox treasury vester contract.
+ * The Polarfox pair treasury vester contract.
  * The treasury vesters' job is to distribute PFX to three multisig wallets over time:
  * 1/ The liquidity mining multisig, which will hold the PFX tokens to be sent for liquidity mining;
  * 2/ The governance treasury multisig, which will be given to the governance in time;
@@ -25,11 +25,16 @@ import "./SafeMath.sol";
  * implementations of Avalanche at this time. The team will look into the possibility of creating our own multisig
  * wallets and change the recipients from this contract to the relevant multisig wallets.
  */
-contract TreasuryVester {
+contract PairTreasuryVester {
     using SafeMath for uint;
 
     address public pfx;
-    address public recipient;
+    address public liquidityMiningRecipient;
+    address public governanceTreasuryRecipient;
+
+    // The percentage of tokens to be sent to liquidity mining.
+    // The rest will be sent to the governance treasury.
+    uint public liquidityMiningWeight;
 
     uint public vestingAmount;
     uint public vestingBegin;
@@ -40,7 +45,9 @@ contract TreasuryVester {
 
     constructor(
         address pfx_,
-        address recipient_,
+        address liquidityMiningRecipient_,
+        address governanceTreasuryRecipient_,
+        uint liquidityMiningWeight_,
         uint vestingAmount_,
         uint vestingBegin_,
         uint vestingCliff_,
@@ -51,7 +58,10 @@ contract TreasuryVester {
         require(vestingEnd_ > vestingCliff_, 'TreasuryVester::constructor: end is too early');
 
         pfx = pfx_;
-        recipient = recipient_;
+        liquidityMiningRecipient = liquidityMiningRecipient_;
+        governanceTreasuryRecipient = governanceTreasuryRecipient_;
+
+        liquidityMiningWeight = liquidityMiningWeight_; // Either 917 (91.7%) or 922 (92.2%) 
 
         vestingAmount = vestingAmount_;
         vestingBegin = vestingBegin_;
@@ -61,13 +71,20 @@ contract TreasuryVester {
         lastUpdate = vestingBegin;
     }
 
-    function setRecipient(address recipient_) public {
-        require(msg.sender == recipient, 'TreasuryVester::setRecipient: unauthorized');
-        recipient = recipient_;
+    function setLiquidityMiningRecipient(address liquidityMiningRecipient_) public {
+        require(msg.sender == liquidityMiningRecipient, 'TreasuryVester::setLiquidityMiningRecipient: unauthorized');
+        liquidityMiningRecipient = liquidityMiningRecipient_;
+    }
+
+    function setGovernanceTreasuryRecipient(address governanceTreasuryRecipient_) public {
+        require(msg.sender == governanceTreasuryRecipient, 'TreasuryVester::setGovernanceTreasuryRecipient: unauthorized');
+        governanceTreasuryRecipient = governanceTreasuryRecipient_;
     }
 
     function claim() public {
         require(block.timestamp >= vestingCliff, 'TreasuryVester::claim: not time yet');
+        
+        // Calculate the total amount of PFX to send
         uint amount;
         if (block.timestamp >= vestingEnd) {
             amount = IPfx(pfx).balanceOf(address(this));
@@ -75,7 +92,14 @@ contract TreasuryVester {
             amount = vestingAmount.mul(block.timestamp - lastUpdate).div(vestingEnd - vestingBegin);
             lastUpdate = block.timestamp;
         }
-        IPfx(pfx).transfer(recipient, amount);
+        
+        // Cut the total amount of PFX to send in two parts
+        uint liquidityMiningAmount = amount.mul(liquidityMiningWeight).div(1000); // 91.7% = 917/1000 | 92.2% = 922/1000
+        uint governanceTreasuryAmount = amount - liquidityMiningAmount;
+
+        // Send the PFX
+        IPfx(pfx).transfer(liquidityMiningRecipient, liquidityMiningAmount);
+        IPfx(pfx).transfer(governanceTreasuryRecipient, governanceTreasuryAmount);
     }
 }
 
