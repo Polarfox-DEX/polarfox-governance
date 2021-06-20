@@ -3,7 +3,6 @@ const Web3 = require('web3')
 const { IS_PRODUCTION, CHAIN_ID, getProvider } = require('./const')
 const {
     PFX,
-    TEAM_TREASURY_MULTISIG_ADDR,
     LIQUIDITY_MINING_MULTISIG_ADDR,
     AIRDROP_ADDR,
     TREASURY_1_VESTING_AMOUNT,
@@ -14,6 +13,7 @@ const {
     TREASURY_VESTER_2,
     TREASURY_VESTER_3,
     TREASURY_VESTER_4,
+    TEAM_TREASURY,
     TEAM_TREASURY_VESTING_AMOUNT,
     FIRST_LIQUIDITY_MINING_AMOUNT,
     AIRDROP_AMOUNT
@@ -40,7 +40,7 @@ const allocatePfx = async () => {
         await transfer(accounts, pfx, 'treasury vester #2', TREASURY_VESTER_2[chainId], TREASURY_2_VESTING_AMOUNT)
         await transfer(accounts, pfx, 'treasury vester #3', TREASURY_VESTER_3[chainId], TREASURY_3_VESTING_AMOUNT)
         await transfer(accounts, pfx, 'treasury vester #4', TREASURY_VESTER_4[chainId], TREASURY_4_VESTING_AMOUNT)
-        await transfer(accounts, pfx, 'team treasury vester', TEAM_TREASURY_MULTISIG_ADDR[chainId], TEAM_TREASURY_VESTING_AMOUNT)
+        await transfer(accounts, pfx, 'team treasury vester', TEAM_TREASURY[chainId], TEAM_TREASURY_VESTING_AMOUNT)
 
         console.log('Done!')
     } catch (error) {
