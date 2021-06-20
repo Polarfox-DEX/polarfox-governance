@@ -12,8 +12,8 @@ const CHAIN_ID = {
 const IS_PRODUCTION = false
 
 const PROVIDER = {
-    [CHAIN_ID.AVALANCHE]: 'https://avalanche--mainnet--rpc.datahub.figment.io/apikey/9dbc9db32d2aa223eec796262c6339b6/ext/bc/C/rpc',
-    [CHAIN_ID.FUJI]: 'https://avalanche--fuji--rpc.datahub.figment.io/apikey/9dbc9db32d2aa223eec796262c6339b6/ext/bc/C/rpc'
+    [CHAIN_ID.AVALANCHE]: 'https://api.avax.network/ext/bc/C/rpc',
+    [CHAIN_ID.FUJI]: 'https://api.avax-test.network/ext/bc/C/rpc'
 }
 
 // Danger zone

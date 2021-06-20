@@ -6,11 +6,13 @@ const {
     OWNER_ADDR,
     TEAM_TREASURY_MULTISIG_ADDR,
     LIQUIDITY_MINING_MULTISIG_ADDR,
+    GOVERNANCE_TREASURY_MULTISIG_ADDR,
     AIRDROP_ADDR,
     TREASURY_VESTER_1,
     TREASURY_VESTER_2,
     TREASURY_VESTER_3,
-    TREASURY_VESTER_4
+    TREASURY_VESTER_4,
+    TEAM_TREASURY,
 } = require('./governanceConstants')
 
 const pfxContract = require('../artifacts/contracts/PFX.sol/Pfx.json')
@@ -25,11 +27,13 @@ const toExclude = [
     OWNER_ADDR,
     TEAM_TREASURY_MULTISIG_ADDR[chainId],
     LIQUIDITY_MINING_MULTISIG_ADDR[chainId],
+    GOVERNANCE_TREASURY_MULTISIG_ADDR[chainId],
     AIRDROP_ADDR[chainId],
     TREASURY_VESTER_1[chainId],
     TREASURY_VESTER_2[chainId],
     TREASURY_VESTER_3[chainId],
-    TREASURY_VESTER_4[chainId]
+    TREASURY_VESTER_4[chainId],
+    TEAM_TREASURY[chainId]
 ]
 
 const excludeAllFull = async () => {
@@ -71,8 +75,6 @@ async function excludeFull(accounts, pfx, address) {
             })
 
         console.log(`excludeDst(${address}) OK`)
-
-        console.log('Done!')
     } catch (error) {
         console.log('An error occurred in excludeAirdropFull():', error)
     }
