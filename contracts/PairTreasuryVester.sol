@@ -53,9 +53,9 @@ contract PairTreasuryVester {
         uint vestingCliff_,
         uint vestingEnd_
     ) public {
-        require(vestingBegin_ >= block.timestamp, 'TreasuryVester::constructor: vesting begin too early');
-        require(vestingCliff_ >= vestingBegin_, 'TreasuryVester::constructor: cliff is too early');
-        require(vestingEnd_ > vestingCliff_, 'TreasuryVester::constructor: end is too early');
+        require(vestingBegin_ >= block.timestamp, 'PairTreasuryVester::constructor: vesting begin too early');
+        require(vestingCliff_ >= vestingBegin_, 'PairTreasuryVester::constructor: cliff is too early');
+        require(vestingEnd_ > vestingCliff_, 'PairTreasuryVester::constructor: end is too early');
 
         pfx = pfx_;
         liquidityMiningRecipient = liquidityMiningRecipient_;
@@ -72,17 +72,17 @@ contract PairTreasuryVester {
     }
 
     function setLiquidityMiningRecipient(address liquidityMiningRecipient_) public {
-        require(msg.sender == liquidityMiningRecipient, 'TreasuryVester::setLiquidityMiningRecipient: unauthorized');
+        require(msg.sender == liquidityMiningRecipient, 'PairTreasuryVester::setLiquidityMiningRecipient: unauthorized');
         liquidityMiningRecipient = liquidityMiningRecipient_;
     }
 
     function setGovernanceTreasuryRecipient(address governanceTreasuryRecipient_) public {
-        require(msg.sender == governanceTreasuryRecipient, 'TreasuryVester::setGovernanceTreasuryRecipient: unauthorized');
+        require(msg.sender == governanceTreasuryRecipient, 'PairTreasuryVester::setGovernanceTreasuryRecipient: unauthorized');
         governanceTreasuryRecipient = governanceTreasuryRecipient_;
     }
 
     function claim() public {
-        require(block.timestamp >= vestingCliff, 'TreasuryVester::claim: not time yet');
+        require(block.timestamp >= vestingCliff, 'PairTreasuryVester::claim: not time yet');
         
         // Calculate the total amount of PFX to send
         uint amount;
