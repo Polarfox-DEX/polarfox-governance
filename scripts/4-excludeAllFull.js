@@ -13,6 +13,7 @@ const {
     TREASURY_VESTER_3,
     TREASURY_VESTER_4,
     TEAM_TREASURY,
+    PFX_REWARDS_FACTORY_ADDR
 } = require('./governanceConstants')
 
 const pfxContract = require('../artifacts/contracts/PFX.sol/Pfx.json')
@@ -33,7 +34,8 @@ const toExclude = [
     TREASURY_VESTER_2[chainId],
     TREASURY_VESTER_3[chainId],
     TREASURY_VESTER_4[chainId],
-    TEAM_TREASURY[chainId]
+    TEAM_TREASURY[chainId],
+    PFX_REWARDS_FACTORY_ADDR[chainId]
 ]
 
 const excludeAllFull = async () => {

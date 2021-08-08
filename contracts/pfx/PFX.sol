@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.6;
 
-import './SafeMath.sol';
 import './Ownable.sol';
 import './IERC20.sol';
 
-// TODO: make ERC20 - make sure all methods are overriden properly
-// TODO: kill all TODOs
-// Add proper introductory comment
+// TODO: See if further improvements can be made using Solidity 0.8.6
+// TODO: Use +=, -=, x=, /= whenever possible
+// TODO: Add proper introductory comment
 
 contract PFX is Ownable, IERC20 {
     /// @notice EIP-20 token name for this token
@@ -22,17 +21,17 @@ contract PFX is Ownable, IERC20 {
     /// @notice Initial number of tokens in circulation
     uint256 public constant initialSupply = 30_000_000e18; // 30 million PFX
 
-    /// @notice Maximum value for the burn fee - it cannot be set up above this number
-    uint96 public constant maximumBurnFee = 20; // 5% = 1/20
+    /// @notice Maximum value for the LP reflection fee - it cannot be set up above this number
+    uint96 public constant maximumReflectionFee = 100; // 10% = 100/1000
 
     /// @notice Maximum value for the dev fee - it cannot be set up above this number
-    uint96 public constant maximumDevFee = 1000; // 0.1% = 1/1000
+    uint96 public constant maximumDevFee = 10; // 1% = 10/1000
 
-    /// @notice Current number of tokens in circulation
-    uint256 public totalSupply_;
+    /// @notice Current reflection fee
+    uint96 public reflectionFee;
 
-    /// @notice Current burn fee
-    uint96 public burnFee;
+    /// @notice Reflection address - the address that receives the reflection fees
+    address public reflectionAddress;
 
     /// @notice Current dev funding fee
     uint96 public devFee;
@@ -40,16 +39,16 @@ contract PFX is Ownable, IERC20 {
     /// @notice Dev address - the address that receives the dev funding fees
     address public devAddress;
 
-    /// @notice True if the token is burning, false otherwise
-    bool public isBurning;
+    /// @notice True if the token is reflecting to PFX-LP holders, false otherwise
+    bool public isReflecting;
 
     /// @notice True if dev fees are charged, false otherwise
-    bool public chargeDevFees;
+    bool public isChargingDevFees;
 
-    /// @notice IsExcludedSrc - the addresses that are excluded from the burn / dev fees when sending transactions
+    /// @notice IsExcludedSrc - the addresses that are excluded from the reflection / dev fees when sending transactions
     mapping(address => bool) public isExcludedSrc;
 
-    /// @notice IsExcludedDst - the addresses that are excluded from the burn / dev fees when receiving transactions
+    /// @notice IsExcludedDst - the addresses that are excluded from the reflection / dev fees when receiving transactions
     mapping(address => bool) public isExcludedDst;
 
     /// @dev Allowance amounts on behalf of others
@@ -100,31 +99,34 @@ contract PFX is Ownable, IERC20 {
         // All the tokens are sent to msg.sender
         balances[msg.sender] = uint96(initialSupply);
 
+        // The reflection address is temporarily set to msg.sender
+        reflectionAddress = msg.sender;
+
         // The dev address is the address which will receive the dev fees
         devAddress = _devAddress;
-        totalSupply_ = initialSupply;
 
-        burnFee = 370; // 0.27% = 1/370
-        devFee = 3333; // 0.03% = 1/3333
+        // Initial values for reflection and dev fees
+        reflectionFee = 9; // 0.9% = 9/1000
+        devFee = 1; // 0.1% = 1/1000
 
-        isBurning = true;
-        chargeDevFees = true;
+        // Turn on reflection and dev fees
+        isReflecting = true;
+        isChargingDevFees = true;
 
+        // Exclude contract creator address and dev address from fees
         isExcludedSrc[msg.sender] = true;
         isExcludedSrc[_devAddress] = true;
-
         isExcludedDst[msg.sender] = true;
         isExcludedDst[_devAddress] = true;
 
-        emit Transfer(address(0), _devAddress, initialSupply);
+        emit Transfer(address(0), msg.sender, initialSupply);
     }
 
     /**
      * @notice Returns the amount of tokens in existence.
      */
-    function totalSupply() external view override returns (uint256) {
-        // TODO: code a proper total supply method. Return the 30,000,000 minus the amount of tokens sent to burn addresses (list all burn addresses)
-        return totalSupply_;
+    function totalSupply() external pure override returns (uint256) {
+        return initialSupply;
     }
 
     /**
@@ -150,7 +152,7 @@ contract PFX is Ownable, IERC20 {
         if (rawAmount == type(uint256).max) {
             amount = type(uint96).max;
         } else {
-            amount = safe96(rawAmount, 'Pfx::approve: amount exceeds 96 bits');
+            amount = safe96(rawAmount, 'PFX::approve: amount exceeds 96 bits');
         }
 
         allowances[msg.sender][spender] = amount;
@@ -160,7 +162,7 @@ contract PFX is Ownable, IERC20 {
     }
 
     /**
-     * @notice Triggers an approval from owner to spends
+     * @notice Triggers an approval from owner to spend
      * @param owner The address to approve from
      * @param spender The address to be approved
      * @param rawAmount The number of tokens that are approved (2^256-1 means infinite)
@@ -182,16 +184,16 @@ contract PFX is Ownable, IERC20 {
         if (rawAmount == type(uint256).max) {
             amount = type(uint96).max;
         } else {
-            amount = safe96(rawAmount, 'Pfx::permit: amount exceeds 96 bits');
+            amount = safe96(rawAmount, 'PFX::permit: amount exceeds 96 bits');
         }
 
         bytes32 domainSeparator = keccak256(abi.encode(DOMAIN_TYPEHASH, keccak256(bytes(name)), getChainId(), address(this)));
         bytes32 structHash = keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, rawAmount, nonces[owner]++, deadline));
         bytes32 digest = keccak256(abi.encodePacked('\x19\x01', domainSeparator, structHash));
         address signatory = ecrecover(digest, v, r, s);
-        require(signatory != address(0), 'Pfx::permit: invalid signature');
-        require(signatory == owner, 'Pfx::permit: unauthorized');
-        require(block.timestamp <= deadline, 'Pfx::permit: signature expired');
+        require(signatory != address(0), 'PFX::permit: invalid signature');
+        require(signatory == owner, 'PFX::permit: unauthorized');
+        require(block.timestamp <= deadline, 'PFX::permit: signature expired');
 
         allowances[owner][spender] = amount;
 
@@ -214,7 +216,7 @@ contract PFX is Ownable, IERC20 {
      * @return Whether or not the transfer succeeded
      */
     function transfer(address dst, uint256 rawAmount) external override returns (bool) {
-        uint96 amount = safe96(rawAmount, 'Pfx::transfer: amount exceeds 96 bits');
+        uint96 amount = safe96(rawAmount, 'PFX::transfer: amount exceeds 96 bits');
         _transferTokens(msg.sender, dst, amount);
         return true;
     }
@@ -233,10 +235,16 @@ contract PFX is Ownable, IERC20 {
     ) external override returns (bool) {
         address spender = msg.sender;
         uint96 spenderAllowance = allowances[src][spender];
-        uint96 amount = safe96(rawAmount, 'Pfx::approve: amount exceeds 96 bits');
+        uint96 amount = safe96(rawAmount, 'PFX::approve: amount exceeds 96 bits');
 
         if (spender != src && spenderAllowance != type(uint96).max) {
-            uint96 newAllowance = sub96(spenderAllowance, amount, 'Pfx::transferFrom: transfer amount exceeds spender allowance');
+            require(spenderAllowance >= amount, 'PFX::transferFrom: transfer amount exceeds spender allowance');
+            uint96 newAllowance;
+
+            unchecked {
+                newAllowance = spenderAllowance - amount;
+            }
+
             allowances[src][spender] = newAllowance;
 
             emit Approval(src, spender, newAllowance);
@@ -275,9 +283,9 @@ contract PFX is Ownable, IERC20 {
         bytes32 structHash = keccak256(abi.encode(DELEGATION_TYPEHASH, delegatee, nonce, expiry));
         bytes32 digest = keccak256(abi.encodePacked('\x19\x01', domainSeparator, structHash));
         address signatory = ecrecover(digest, v, r, s);
-        require(signatory != address(0), 'Pfx::delegateBySig: invalid signature');
-        require(nonce == nonces[signatory]++, 'Pfx::delegateBySig: invalid nonce');
-        require(block.timestamp <= expiry, 'Pfx::delegateBySig: signature expired');
+        require(signatory != address(0), 'PFX::delegateBySig: invalid signature');
+        require(nonce == nonces[signatory]++, 'PFX::delegateBySig: invalid nonce');
+        require(block.timestamp <= expiry, 'PFX::delegateBySig: signature expired');
         return _delegate(signatory, delegatee);
     }
 
@@ -299,7 +307,7 @@ contract PFX is Ownable, IERC20 {
      * @return The number of votes the account had as of the given block
      */
     function getPriorVotes(address account, uint256 blockNumber) public view returns (uint96) {
-        require(blockNumber < block.number, 'Pfx::getPriorVotes: not yet determined');
+        require(blockNumber < block.number, 'PFX::getPriorVotes: not yet determined');
 
         uint32 nCheckpoints = numCheckpoints[account];
         if (nCheckpoints == 0) {
@@ -319,7 +327,7 @@ contract PFX is Ownable, IERC20 {
         uint32 lower = 0;
         uint32 upper = nCheckpoints - 1;
         while (upper > lower) {
-            uint32 center = upper - (upper - lower) / 2; // ceil, avoiding overflow
+            uint32 center = upper - (upper - lower) / 2; // Ceil, avoiding overflow
             Checkpoint memory cp = checkpoints[account][center];
             if (cp.fromBlock == blockNumber) {
                 return cp.votes;
@@ -348,7 +356,7 @@ contract PFX is Ownable, IERC20 {
         address dst,
         uint96 amount
     ) internal {
-        require(src != address(0), 'Pfx::_transferTokens: cannot transfer from the zero address');
+        require(src != address(0), 'PFX::_transferTokens: cannot transfer from the zero address');
 
         if (isExcludedSrc[src] || isExcludedDst[dst]) _transferExcluded(src, dst, amount);
         else _transferStandard(src, dst, amount);
@@ -364,33 +372,34 @@ contract PFX is Ownable, IERC20 {
         address dst,
         uint96 amount
     ) private {
-        uint96 burnAmount = 0;
+        uint96 reflectionAmount = 0;
         uint96 devAmount = 0;
 
         // Get 100% of the tokens
-        balances[src] = sub96(balances[src], amount, 'Pfx::_transferStandard: transfer amount exceeds balance');
+        require(balances[src] >= amount, 'PFX::_transferStandard: transfer amount exceeds balance');
 
-        if (isBurning) {
-            // Burn (100/burnFee)% = send them to the zero address
-            burnAmount = div96(amount, burnFee, 'Pfx::_transferStandard: burn calculation failed');
-            balances[address(0)] = add96(balances[address(0)], burnAmount, 'Pfx::_transferStandard: burn failed');
-            // Reduce the total supply accordingly
-            totalSupply_ = SafeMath.sub(totalSupply_, uint256(burnAmount), 'Pfx::_transferStandard: total supply reduction failed');
+        unchecked {
+            balances[src] -= amount;
         }
 
-        if (chargeDevFees) {
-            // Send (100/devFee)%  to the dev wallet
-            devAmount = div96(amount, devFee);
-            balances[devAddress] = add96(balances[devAddress], devAmount, 'Pfx::_transferStandard: dev transfer failed');
+        if (isReflecting) {
+            // Calculate reflection amount
+            reflectionAmount = (amount * reflectionFee) / 1000;
+
+            // Send reflection amount to the reflection address
+            balances[reflectionAddress] += reflectionAmount;
+        }
+
+        if (isChargingDevFees) {
+            // Calculate dev amount
+            devAmount = (amount * devFee) / 1000;
+
+            // Send dev amount to the dev address
+            balances[devAddress] += devAmount;
         }
 
         // Send the rest to the recipient
-        uint96 rest = sub96(
-            sub96(amount, burnAmount, 'Pfx::_transferStandard: transfer amount overflows - 1'),
-            devAmount,
-            'Pfx::_transferStandard: transfer amount overflows - 2'
-        );
-        balances[dst] = add96(balances[dst], rest, 'Pfx::_transferStandard: transfer amount overflows - 3');
+        balances[dst] += amount - reflectionAmount - devAmount;
     }
 
     // Internal transfer mechanism without fees
@@ -400,10 +409,14 @@ contract PFX is Ownable, IERC20 {
         uint96 amount
     ) private {
         // Get 100% of the tokens
-        balances[src] = sub96(balances[src], amount, 'Pfx::_transferExcluded: transfer amount exceeds balance');
+        require(balances[src] >= amount, 'PFX::_transferExcluded: transfer amount exceeds balance');
+
+        unchecked {
+            balances[src] -= amount;
+        }
 
         // Send 100% to the recipient
-        balances[dst] = add96(balances[dst], amount, 'Pfx::_transferExcluded: transfer amount overflows');
+        balances[dst] += amount;
     }
 
     function includeSrc(address account) public onlyOwner {
@@ -422,38 +435,42 @@ contract PFX is Ownable, IERC20 {
         isExcludedDst[account] = true;
     }
 
-    function setBurnFee(uint96 _burnFee) public onlyOwner {
-        // burnFee > maximumBurnFee => 1/burnFee < 1/maximumBurnFee
-        require(_burnFee > maximumBurnFee, 'Pfx::setBurnFee: new burn fee exceeds maximum burn fee');
-        burnFee = _burnFee;
+    function setReflectionFee(uint96 _reflectionFee) public onlyOwner {
+        require(_reflectionFee < maximumReflectionFee, 'PFX::setReflectionFee: new reflection fee exceeds maximum reflection fee');
+        reflectionFee = _reflectionFee;
     }
 
     function setDevFee(uint96 _devFee) public onlyOwner {
-        // devFee > maximumDevFee => 1/devFee < 1/maximumDevFee
-        require(_devFee > maximumDevFee, 'Pfx::setDevFee: new dev fee exceeds maximum dev fee');
+        require(_devFee < maximumDevFee, 'PFX::setDevFee: new dev fee exceeds maximum dev fee');
         devFee = _devFee;
+    }
+
+    function setReflectionAddress(address _reflectionAddress) public {
+        // Only callable by the reflection address
+        require(msg.sender == reflectionAddress, 'PFX::setReflectionAddress: can only be called by the reflection address');
+        reflectionAddress = _reflectionAddress;
     }
 
     function setDevAddress(address _devAddress) public {
         // Only callable by the dev fee address
-        require(msg.sender == devAddress, 'Pfx::setDevAddress: can only be called by the dev address');
+        require(msg.sender == devAddress, 'PFX::setDevAddress: can only be called by the dev address');
         devAddress = _devAddress;
     }
 
-    function startBurning() public onlyOwner {
-        isBurning = true;
+    function startReflecting() public onlyOwner {
+        isReflecting = true;
     }
 
-    function stopBurning() public onlyOwner {
-        isBurning = false;
+    function stopReflecting() public onlyOwner {
+        isReflecting = false;
     }
 
     function startDevFees() public onlyOwner {
-        chargeDevFees = true;
+        isChargingDevFees = true;
     }
 
     function stopDevFees() public onlyOwner {
-        chargeDevFees = false;
+        isChargingDevFees = false;
     }
 
     function _moveDelegates(
@@ -465,14 +482,14 @@ contract PFX is Ownable, IERC20 {
             if (srcRep != address(0)) {
                 uint32 srcRepNum = numCheckpoints[srcRep];
                 uint96 srcRepOld = srcRepNum > 0 ? checkpoints[srcRep][srcRepNum - 1].votes : 0;
-                uint96 srcRepNew = sub96(srcRepOld, amount, 'Pfx::_moveVotes: vote amount underflows');
+                uint96 srcRepNew = srcRepOld - amount;
                 _writeCheckpoint(srcRep, srcRepNum, srcRepOld, srcRepNew);
             }
 
             if (dstRep != address(0)) {
                 uint32 dstRepNum = numCheckpoints[dstRep];
                 uint96 dstRepOld = dstRepNum > 0 ? checkpoints[dstRep][dstRepNum - 1].votes : 0;
-                uint96 dstRepNew = add96(dstRepOld, amount, 'Pfx::_moveVotes: vote amount overflows');
+                uint96 dstRepNew = dstRepOld + amount;
                 _writeCheckpoint(dstRep, dstRepNum, dstRepOld, dstRepNew);
             }
         }
@@ -484,7 +501,7 @@ contract PFX is Ownable, IERC20 {
         uint96 oldVotes,
         uint96 newVotes
     ) internal {
-        uint32 blockNumber = safe32(block.number, 'Pfx::_writeCheckpoint: block number exceeds 32 bits');
+        uint32 blockNumber = safe32(block.number, 'PFX::_writeCheckpoint: block number exceeds 32 bits');
 
         if (nCheckpoints > 0 && checkpoints[delegatee][nCheckpoints - 1].fromBlock == blockNumber) {
             checkpoints[delegatee][nCheckpoints - 1].votes = newVotes;
@@ -504,42 +521,6 @@ contract PFX is Ownable, IERC20 {
     function safe96(uint256 n, string memory errorMessage) internal pure returns (uint96) {
         require(n < 2**96, errorMessage);
         return uint96(n);
-    }
-
-    function add96(
-        uint96 a,
-        uint96 b,
-        string memory errorMessage
-    ) internal pure returns (uint96) {
-        uint96 c = a + b;
-        require(c >= a, errorMessage);
-        return c;
-    }
-
-    function sub96(
-        uint96 a,
-        uint96 b,
-        string memory errorMessage
-    ) internal pure returns (uint96) {
-        require(b <= a, errorMessage);
-        return a - b;
-    }
-
-    function div96(uint96 a, uint96 b) internal pure returns (uint96) {
-        return div96(a, b, 'SafeMath: division by zero (uint96)');
-    }
-
-    function div96(
-        uint96 a,
-        uint96 b,
-        string memory errorMessage
-    ) internal pure returns (uint96) {
-        // Solidity only automatically asserts when dividing by 0
-        require(b > 0, errorMessage);
-        uint96 c = a / b;
-        // assert(a == b * c + a % b); // There is no case in which this doesn't hold
-
-        return c;
     }
 
     function getChainId() internal view returns (uint256) {

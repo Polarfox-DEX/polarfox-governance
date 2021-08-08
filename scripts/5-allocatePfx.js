@@ -44,7 +44,7 @@ const allocatePfx = async () => {
 
         console.log('Done!')
     } catch (error) {
-        console.log('An error occurred in excludeAirdropFull():', error)
+        console.log('An error occurred in allocatePfx():', error)
     }
 }
 
