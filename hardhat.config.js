@@ -14,7 +14,7 @@ task("accounts", "Prints the list of accounts", async () => {
   }
 });
 
-const mnemonic = fs.existsSync('./.mnemonic') ? fs.readFileSync('./.mnemonic', 'utf-8').trim() : ''
+const mnemonic = fs.existsSync('../mnemonic') ? fs.readFileSync('../mnemonic', 'utf-8').trim() : ''
 if (!mnemonic)
   console.log('Missing mnemonic')
 
