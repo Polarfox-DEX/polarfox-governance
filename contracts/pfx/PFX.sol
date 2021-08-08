@@ -1,16 +1,13 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.6.12;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.6;
 
 import './SafeMath.sol';
 import './Ownable.sol';
 import './IERC20.sol';
 
-// TODO: imports
-// TODO: crank up to 0.8.6
 // TODO: make ERC20 - make sure all methods are overriden properly
-// TODO: remove ABIEncoderV2 if possible
 // TODO: kill all TODOs
+// Add proper introductory comment
 
 contract PFX is Ownable, IERC20 {
     /// @notice EIP-20 token name for this token
@@ -95,17 +92,11 @@ contract PFX is Ownable, IERC20 {
     /// @notice An event thats emitted when a delegate account's vote balance changes
     event DelegateVotesChanged(address indexed delegate, uint256 previousBalance, uint256 newBalance);
 
-    /// @notice The standard EIP-20 transfer event
-    event Transfer(address indexed from, address indexed to, uint256 amount);
-
-    /// @notice The standard EIP-20 approval event
-    event Approval(address indexed owner, address indexed spender, uint256 amount);
-
     /**
      * @notice Construct a new PFX token
      * @param _devAddress The initial account to grant all the tokens
      */
-    constructor(address _devAddress) public {
+    constructor(address _devAddress) {
         // All the tokens are sent to msg.sender
         balances[msg.sender] = uint96(initialSupply);
 
@@ -156,8 +147,8 @@ contract PFX is Ownable, IERC20 {
      */
     function approve(address spender, uint256 rawAmount) external override returns (bool) {
         uint96 amount;
-        if (rawAmount == uint256(-1)) {
-            amount = uint96(-1);
+        if (rawAmount == type(uint256).max) {
+            amount = type(uint96).max;
         } else {
             amount = safe96(rawAmount, 'Pfx::approve: amount exceeds 96 bits');
         }
@@ -188,8 +179,8 @@ contract PFX is Ownable, IERC20 {
         bytes32 s
     ) external {
         uint96 amount;
-        if (rawAmount == uint256(-1)) {
-            amount = uint96(-1);
+        if (rawAmount == type(uint256).max) {
+            amount = type(uint96).max;
         } else {
             amount = safe96(rawAmount, 'Pfx::permit: amount exceeds 96 bits');
         }
@@ -200,7 +191,7 @@ contract PFX is Ownable, IERC20 {
         address signatory = ecrecover(digest, v, r, s);
         require(signatory != address(0), 'Pfx::permit: invalid signature');
         require(signatory == owner, 'Pfx::permit: unauthorized');
-        require(now <= deadline, 'Pfx::permit: signature expired');
+        require(block.timestamp <= deadline, 'Pfx::permit: signature expired');
 
         allowances[owner][spender] = amount;
 
@@ -244,7 +235,7 @@ contract PFX is Ownable, IERC20 {
         uint96 spenderAllowance = allowances[src][spender];
         uint96 amount = safe96(rawAmount, 'Pfx::approve: amount exceeds 96 bits');
 
-        if (spender != src && spenderAllowance != uint96(-1)) {
+        if (spender != src && spenderAllowance != type(uint96).max) {
             uint96 newAllowance = sub96(spenderAllowance, amount, 'Pfx::transferFrom: transfer amount exceeds spender allowance');
             allowances[src][spender] = newAllowance;
 
@@ -286,7 +277,7 @@ contract PFX is Ownable, IERC20 {
         address signatory = ecrecover(digest, v, r, s);
         require(signatory != address(0), 'Pfx::delegateBySig: invalid signature');
         require(nonce == nonces[signatory]++, 'Pfx::delegateBySig: invalid nonce');
-        require(now <= expiry, 'Pfx::delegateBySig: signature expired');
+        require(block.timestamp <= expiry, 'Pfx::delegateBySig: signature expired');
         return _delegate(signatory, delegatee);
     }
 
@@ -551,7 +542,7 @@ contract PFX is Ownable, IERC20 {
         return c;
     }
 
-    function getChainId() internal pure returns (uint256) {
+    function getChainId() internal view returns (uint256) {
         uint256 chainId;
         assembly {
             chainId := chainid()
