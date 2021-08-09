@@ -2,13 +2,14 @@
 pragma solidity ^0.8.6;
 
 import './Ownable.sol';
+import './IPFX.sol';
 import './IERC20.sol';
 
 // TODO: See if further improvements can be made using Solidity 0.8.6
 // TODO: Use +=, -=, x=, /= whenever possible
 // TODO: Add proper introductory comment
 
-contract PFX is Ownable, IERC20 {
+contract PFX is Ownable, IPFX, IERC20 {
     /// @notice EIP-20 token name for this token
     string public constant name = 'Polarfox';
 
@@ -19,7 +20,7 @@ contract PFX is Ownable, IERC20 {
     uint8 public constant decimals = 18;
 
     /// @notice Initial number of tokens in circulation
-    uint256 public constant initialSupply = 30_000_000e18; // 30 million PFX
+    uint256 public constant override totalSupply = 30_000_000e18; // 30 million PFX
 
     /// @notice Maximum value for the LP reflection fee - it cannot be set up above this number
     uint96 public constant maximumReflectionFee = 100; // 10% = 100/1000
@@ -85,19 +86,13 @@ contract PFX is Ownable, IERC20 {
     /// @notice A record of states for signing / validating signatures
     mapping(address => uint256) public nonces;
 
-    /// @notice An event thats emitted when an account changes its delegate
-    event DelegateChanged(address indexed delegator, address indexed fromDelegate, address indexed toDelegate);
-
-    /// @notice An event thats emitted when a delegate account's vote balance changes
-    event DelegateVotesChanged(address indexed delegate, uint256 previousBalance, uint256 newBalance);
-
     /**
      * @notice Construct a new PFX token
      * @param _devAddress The initial account to grant all the tokens
      */
     constructor(address _devAddress) {
         // All the tokens are sent to msg.sender
-        balances[msg.sender] = uint96(initialSupply);
+        balances[msg.sender] = uint96(totalSupply);
 
         // The reflection address is temporarily set to msg.sender
         reflectionAddress = msg.sender;
@@ -119,14 +114,7 @@ contract PFX is Ownable, IERC20 {
         isExcludedDst[msg.sender] = true;
         isExcludedDst[_devAddress] = true;
 
-        emit Transfer(address(0), msg.sender, initialSupply);
-    }
-
-    /**
-     * @notice Returns the amount of tokens in existence.
-     */
-    function totalSupply() external pure override returns (uint256) {
-        return initialSupply;
+        emit Transfer(address(0), msg.sender, totalSupply);
     }
 
     /**
@@ -179,7 +167,7 @@ contract PFX is Ownable, IERC20 {
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) external {
+    ) external override {
         uint96 amount;
         if (rawAmount == type(uint256).max) {
             amount = type(uint96).max;
@@ -258,7 +246,7 @@ contract PFX is Ownable, IERC20 {
      * @notice Delegate votes from `msg.sender` to `delegatee`
      * @param delegatee The address to delegate votes to
      */
-    function delegate(address delegatee) public {
+    function delegate(address delegatee) public override {
         return _delegate(msg.sender, delegatee);
     }
 
@@ -278,7 +266,7 @@ contract PFX is Ownable, IERC20 {
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) public {
+    ) public override {
         bytes32 domainSeparator = keccak256(abi.encode(DOMAIN_TYPEHASH, keccak256(bytes(name)), getChainId(), address(this)));
         bytes32 structHash = keccak256(abi.encode(DELEGATION_TYPEHASH, delegatee, nonce, expiry));
         bytes32 digest = keccak256(abi.encodePacked('\x19\x01', domainSeparator, structHash));
@@ -294,7 +282,7 @@ contract PFX is Ownable, IERC20 {
      * @param account The address to get votes balance
      * @return The number of current votes for `account`
      */
-    function getCurrentVotes(address account) external view returns (uint96) {
+    function getCurrentVotes(address account) external view override returns (uint96) {
         uint32 nCheckpoints = numCheckpoints[account];
         return nCheckpoints > 0 ? checkpoints[account][nCheckpoints - 1].votes : 0;
     }
@@ -306,7 +294,7 @@ contract PFX is Ownable, IERC20 {
      * @param blockNumber The block number to get the vote balance at
      * @return The number of votes the account had as of the given block
      */
-    function getPriorVotes(address account, uint256 blockNumber) public view returns (uint96) {
+    function getPriorVotes(address account, uint256 blockNumber) public view override returns (uint96) {
         require(blockNumber < block.number, 'PFX::getPriorVotes: not yet determined');
 
         uint32 nCheckpoints = numCheckpoints[account];
@@ -419,57 +407,57 @@ contract PFX is Ownable, IERC20 {
         balances[dst] += amount;
     }
 
-    function includeSrc(address account) public onlyOwner {
+    function includeSrc(address account) public override onlyOwner {
         isExcludedSrc[account] = false;
     }
 
-    function includeDst(address account) public onlyOwner {
+    function includeDst(address account) public override onlyOwner {
         isExcludedDst[account] = false;
     }
 
-    function excludeSrc(address account) public onlyOwner {
+    function excludeSrc(address account) public override onlyOwner {
         isExcludedSrc[account] = true;
     }
 
-    function excludeDst(address account) public onlyOwner {
+    function excludeDst(address account) public override onlyOwner {
         isExcludedDst[account] = true;
     }
 
-    function setReflectionFee(uint96 _reflectionFee) public onlyOwner {
+    function setReflectionFee(uint96 _reflectionFee) public override onlyOwner {
         require(_reflectionFee < maximumReflectionFee, 'PFX::setReflectionFee: new reflection fee exceeds maximum reflection fee');
         reflectionFee = _reflectionFee;
     }
 
-    function setDevFee(uint96 _devFee) public onlyOwner {
+    function setDevFee(uint96 _devFee) public override onlyOwner {
         require(_devFee < maximumDevFee, 'PFX::setDevFee: new dev fee exceeds maximum dev fee');
         devFee = _devFee;
     }
 
-    function setReflectionAddress(address _reflectionAddress) public {
+    function setReflectionAddress(address _reflectionAddress) public override {
         // Only callable by the reflection address
         require(msg.sender == reflectionAddress, 'PFX::setReflectionAddress: can only be called by the reflection address');
         reflectionAddress = _reflectionAddress;
     }
 
-    function setDevAddress(address _devAddress) public {
+    function setDevAddress(address _devAddress) public override {
         // Only callable by the dev fee address
         require(msg.sender == devAddress, 'PFX::setDevAddress: can only be called by the dev address');
         devAddress = _devAddress;
     }
 
-    function startReflecting() public onlyOwner {
+    function startReflecting() public override onlyOwner {
         isReflecting = true;
     }
 
-    function stopReflecting() public onlyOwner {
+    function stopReflecting() public override onlyOwner {
         isReflecting = false;
     }
 
-    function startDevFees() public onlyOwner {
+    function startDevFees() public override onlyOwner {
         isChargingDevFees = true;
     }
 
-    function stopDevFees() public onlyOwner {
+    function stopDevFees() public override onlyOwner {
         isChargingDevFees = false;
     }
 
