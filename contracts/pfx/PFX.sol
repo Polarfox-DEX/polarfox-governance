@@ -8,6 +8,10 @@ import './IERC20.sol';
 // TODO: See if further improvements can be made using Solidity 0.8.6
 // TODO: Use +=, -=, x=, /= whenever possible
 // TODO: Add proper introductory comment
+// TODO: Add event when excluding from / including in fees
+// TODO: Add other events
+// TODO: Write: this contract is not using SafeMath because we are using Solidity >= 0.8.0
+// TODO: Add comments to functions
 
 contract PFX is Ownable, IPFX, IERC20 {
     /// @notice EIP-20 token name for this token
