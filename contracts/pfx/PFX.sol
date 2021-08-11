@@ -31,7 +31,7 @@ contract PFX is Ownable, IPFX, IERC20 {
     uint96 public constant maximumReflectionFee = 100; // 10% = 100/1000
 
     /// @notice Maximum value for the dev fee - it cannot be set up above this number
-    uint96 public constant maximumDevFee = 10; // 1% = 10/1000
+    uint96 public constant maximumDevFee = 30; // 3% = 30/1000
 
     /// @notice Current reflection fee
     uint96 public reflectionFee;
@@ -106,8 +106,8 @@ contract PFX is Ownable, IPFX, IERC20 {
         devAddress = _devAddress;
 
         // Initial values for reflection and dev fees
-        reflectionFee = 9; // 0.9% = 9/1000
-        devFee = 1; // 0.1% = 1/1000
+        reflectionFee = 30; // 3.0% = 30/1000
+        devFee = 5; // 0.5% = 5/1000
 
         // Turn on reflection and dev fees
         isReflecting = true;
@@ -429,12 +429,12 @@ contract PFX is Ownable, IPFX, IERC20 {
     }
 
     function setReflectionFee(uint96 _reflectionFee) public override onlyOwner {
-        require(_reflectionFee < maximumReflectionFee, 'PFX::setReflectionFee: new reflection fee exceeds maximum reflection fee');
+        require(_reflectionFee <= maximumReflectionFee, 'PFX::setReflectionFee: new reflection fee exceeds maximum reflection fee');
         reflectionFee = _reflectionFee;
     }
 
     function setDevFee(uint96 _devFee) public override onlyOwner {
-        require(_devFee < maximumDevFee, 'PFX::setDevFee: new dev fee exceeds maximum dev fee');
+        require(_devFee <= maximumDevFee, 'PFX::setDevFee: new dev fee exceeds maximum dev fee');
         devFee = _devFee;
     }
 
