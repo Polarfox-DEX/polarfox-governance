@@ -9,10 +9,6 @@ import '@polarfox/periphery/contracts/interfaces/IPolarfoxRouter.sol';
 import '@polarfox/core/contracts/interfaces/IPolarfoxLiquidity.sol';
 import '@polarfox/core/contracts/interfaces/IStakingRewards.sol';
 
-// TODO: Add event for setReflectionAddress
-// TODO: Add event for setPfxAvaxPair
-// TODO: Add event for setPfxRouter
-// TODO: Add other events
 // TODO: This contract should be properly excluded from PFX fees
 // TODO: Think - should we define functions to update PFX and WAVAX? Or is it better to deploy a new contract if it ever comes to that?
 // TODO: When we change PFXRewardsFactory, should we send the PFX and AVAX to the new one? Or is this dangerous from a safety perspective?
@@ -52,6 +48,17 @@ contract PFXRewardsFactory is Ownable {
     // Locked liquidity addresses. They should not receive rewards
     address[] public lockedLiquidityAddresses;
     mapping(address => bool) public isLockedLiquidity;
+
+    // TODO: Add definitions
+    event SwappedPfx(uint256 amountIn);
+    event SentAvax(uint256 toSendTotal);
+    event SetPfxAvaxPair(address _pfxAvaxPair);
+    event SetPfxRouter(address _pfxRouter);
+    event SetMinimumPfxBalance(uint256 _minimumPfxBalance);
+    event SetMinimumAvaxBalance(uint256 _minimumAvaxBalance);
+    event SetPfxPools(uint256[] ratios, address[] pools, address[] stakingRewards);
+    event AddedLockedLiquidityAddress(address _address);
+    event RemovedLockedLiquidityAddress(address _address);
 
     constructor(
         address pfx_,
@@ -95,6 +102,8 @@ contract PFXRewardsFactory is Ownable {
             address(this), // Recipient
             block.timestamp // Deadline
         );
+
+        emit SwappedPfx(amountIn);
     }
 
     function sendAvax() public {
@@ -157,6 +166,8 @@ contract PFXRewardsFactory is Ownable {
                 }
             }
         }
+
+        emit SentAvax(toSendTotal);
     }
 
     function distributeRewards() public {
@@ -181,18 +192,26 @@ contract PFXRewardsFactory is Ownable {
 
     function setPfxAvaxPair(address _pfxAvaxPair) public onlyOwner {
         pfxAvaxPair = _pfxAvaxPair;
+
+        emit SetPfxAvaxPair(_pfxAvaxPair);
     }
 
     function setPfxRouter(address _pfxRouter) public onlyOwner {
         pfxRouter = _pfxRouter;
+
+        emit SetPfxRouter(_pfxRouter);
     }
 
     function setMinimumPfxBalance(uint256 _minimumPfxBalance) public onlyOwner {
         minimumPfxBalance = _minimumPfxBalance;
+
+        emit SetMinimumPfxBalance(_minimumPfxBalance);
     }
 
     function setMinimumAvaxBalance(uint256 _minimumAvaxBalance) public onlyOwner {
         minimumAvaxBalance = _minimumAvaxBalance;
+
+        emit SetMinimumAvaxBalance(_minimumAvaxBalance);
     }
 
     function setPfxPools(
@@ -220,6 +239,8 @@ contract PFXRewardsFactory is Ownable {
         for (i = 0; i < ratios.length; i++) {
             pfxPools.push(PfxPool(ratios[i], pools[i], stakingRewards[i]));
         }
+
+        emit SetPfxPools(ratios, pools, stakingRewards);
     }
 
     function addLockedLiquidityAddress(address _address) public onlyOwner {
@@ -237,6 +258,8 @@ contract PFXRewardsFactory is Ownable {
 
         isLockedLiquidity[_address] = true;
         lockedLiquidityAddresses.push(_address);
+
+        emit AddedLockedLiquidityAddress(_address);
     }
 
     function removeLockedLiquidityAddress(address _address) public onlyOwner {
@@ -254,5 +277,7 @@ contract PFXRewardsFactory is Ownable {
                 return;
             }
         }
+
+        emit RemovedLockedLiquidityAddress(_address);
     }
 }
