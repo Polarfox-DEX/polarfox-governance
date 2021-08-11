@@ -14,7 +14,6 @@ import '@polarfox/core/contracts/interfaces/IStakingRewards.sol';
 // TODO: When we change PFXRewardsFactory, should we send the PFX and AVAX to the new one? Or is this dangerous from a safety perspective?
 
 import './Ownable.sol';
-import './IPFX.sol';
 import './IERC20.sol';
 
 contract PFXRewardsFactory is Ownable {
@@ -182,14 +181,7 @@ contract PFXRewardsFactory is Ownable {
         sendAvax();
     }
 
-    // Private methods
-    // ...
-
     // Owner methods
-    function setReflectionAddress(address _reflectionAddress) public onlyOwner {
-        IPFX(pfx).setReflectionAddress(_reflectionAddress);
-    }
-
     function setPfxAvaxPair(address _pfxAvaxPair) public onlyOwner {
         pfxAvaxPair = _pfxAvaxPair;
 

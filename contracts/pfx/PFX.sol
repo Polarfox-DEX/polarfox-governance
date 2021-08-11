@@ -5,8 +5,6 @@ import './Ownable.sol';
 import './IPFX.sol';
 import './IERC20.sol';
 
-// TODO: Think: should the setters for the dev and PRF addresses be available to the owner of this contract or to said addresses themselves?
-
 // TODO: Add proper introductory comment
 // TODO: Write: this contract is not using SafeMath because we are using Solidity >= 0.8.0
 // TODO: Add comments to functions
@@ -442,16 +440,12 @@ contract PFX is Ownable, IPFX, IERC20 {
         emit SetDevFee(_devFee);
     }
 
-    function setReflectionAddress(address _reflectionAddress) public override {
-        // Only callable by the reflection address
-        require(msg.sender == reflectionAddress, 'PFX::setReflectionAddress: can only be called by the reflection address');
+    function setReflectionAddress(address _reflectionAddress) public override onlyOwner {
         reflectionAddress = _reflectionAddress;
         emit SetReflectionAddress(_reflectionAddress);
     }
 
-    function setDevAddress(address _devAddress) public override {
-        // Only callable by the dev fee address
-        require(msg.sender == devAddress, 'PFX::setDevAddress: can only be called by the dev address');
+    function setDevAddress(address _devAddress) public override onlyOwner {
         devAddress = _devAddress;
         emit SetDevAddress(_devAddress);
     }
