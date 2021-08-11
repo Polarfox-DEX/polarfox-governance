@@ -5,14 +5,12 @@ import './Ownable.sol';
 import './IPFX.sol';
 import './IERC20.sol';
 
-// TODO: See if further improvements can be made using Solidity 0.8.6
-// TODO: Use +=, -=, x=, /= whenever possible
+// TODO: Think: should the setters for the dev and PRF addresses be available to the owner of this contract or to said addresses themselves?
+
 // TODO: Add proper introductory comment
-// TODO: Add event when excluding from / including in fees
-// TODO: Add other events
 // TODO: Write: this contract is not using SafeMath because we are using Solidity >= 0.8.0
 // TODO: Add comments to functions
-// TODO: Think: should the setters for the dev and PRF addresses be available to the owner of this contract or to said addresses themselves?
+// TODO: Add comments on events in IPFX
 
 contract PFX is Ownable, IPFX, IERC20 {
     /// @notice EIP-20 token name for this token
@@ -414,56 +412,68 @@ contract PFX is Ownable, IPFX, IERC20 {
 
     function includeSrc(address account) public override onlyOwner {
         isExcludedSrc[account] = false;
+        emit IncludedSrc(account);
     }
 
     function includeDst(address account) public override onlyOwner {
         isExcludedDst[account] = false;
+        emit IncludedDst(account);
     }
 
     function excludeSrc(address account) public override onlyOwner {
         isExcludedSrc[account] = true;
+        emit ExcludedSrc(account);
     }
 
     function excludeDst(address account) public override onlyOwner {
         isExcludedDst[account] = true;
+        emit ExcludedDst(account);
     }
 
     function setReflectionFee(uint96 _reflectionFee) public override onlyOwner {
         require(_reflectionFee <= maximumReflectionFee, 'PFX::setReflectionFee: new reflection fee exceeds maximum reflection fee');
         reflectionFee = _reflectionFee;
+        emit SetReflectionFee(_reflectionFee);
     }
 
     function setDevFee(uint96 _devFee) public override onlyOwner {
         require(_devFee <= maximumDevFee, 'PFX::setDevFee: new dev fee exceeds maximum dev fee');
         devFee = _devFee;
+        emit SetDevFee(_devFee);
     }
 
     function setReflectionAddress(address _reflectionAddress) public override {
         // Only callable by the reflection address
         require(msg.sender == reflectionAddress, 'PFX::setReflectionAddress: can only be called by the reflection address');
         reflectionAddress = _reflectionAddress;
+        emit SetReflectionAddress(_reflectionAddress);
     }
 
     function setDevAddress(address _devAddress) public override {
         // Only callable by the dev fee address
         require(msg.sender == devAddress, 'PFX::setDevAddress: can only be called by the dev address');
         devAddress = _devAddress;
+        emit SetDevAddress(_devAddress);
     }
 
     function startReflecting() public override onlyOwner {
         isReflecting = true;
+        emit StartedReflecting();
     }
 
     function stopReflecting() public override onlyOwner {
         isReflecting = false;
+        emit StoppedReflecting();
     }
 
     function startDevFees() public override onlyOwner {
         isChargingDevFees = true;
+        emit StartedDevFees();
     }
 
     function stopDevFees() public override onlyOwner {
         isChargingDevFees = false;
+        emit StoppedDevFees();
     }
 
     function _moveDelegates(

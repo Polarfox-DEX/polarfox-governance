@@ -24,28 +24,28 @@ contract PFXRewardsFactory is Ownable {
         address stakingRewards;
     }
 
-    // PFX address
+    /// @notice PFX address
     address public pfx;
 
-    // WAVAX address
+    /// @notice WAVAX address
     address public wavax;
 
-    // PFX/AVAX pair address
+    /// @notice PFX/AVAX pair address
     address public pfxAvaxPair;
 
-    // Polarfox router address
+    /// @notice Polarfox router address
     address public pfxRouter;
 
-    // Minimum PFX balance to be able to swap PFX against AVAX
+    /// @notice Minimum PFX balance to be able to swap PFX against AVAX
     uint256 public minimumPfxBalance;
 
-    // Minimum AVAX balance to be able to give rewards
+    /// @notice Minimum AVAX balance to be able to give rewards
     uint256 public minimumAvaxBalance;
 
-    // Eligible PFX pools
+    /// @notice Eligible PFX pools
     PfxPool[] public pfxPools;
 
-    // Locked liquidity addresses. They should not receive rewards
+    /// @notice Locked liquidity addresses. They should not receive rewards
     address[] public lockedLiquidityAddresses;
     mapping(address => bool) public isLockedLiquidity;
 
@@ -256,8 +256,8 @@ contract PFXRewardsFactory is Ownable {
             );
         }
 
-        isLockedLiquidity[_address] = true;
         lockedLiquidityAddresses.push(_address);
+        isLockedLiquidity[_address] = true;
 
         emit AddedLockedLiquidityAddress(_address);
     }
@@ -268,15 +268,15 @@ contract PFXRewardsFactory is Ownable {
             'PFXRewardsFactory::removeLockedLiquidityAddress: the provided address is not registered as locked liquidity'
         );
 
-        isLockedLiquidity[_address] = false;
-
         for (uint256 i = 0; i < lockedLiquidityAddresses.length; i++) {
             if (lockedLiquidityAddresses[i] == _address) {
                 lockedLiquidityAddresses[i] = lockedLiquidityAddresses[lockedLiquidityAddresses.length - 1];
                 lockedLiquidityAddresses.pop();
-                return;
+                break;
             }
         }
+
+        isLockedLiquidity[_address] = false;
 
         emit RemovedLockedLiquidityAddress(_address);
     }

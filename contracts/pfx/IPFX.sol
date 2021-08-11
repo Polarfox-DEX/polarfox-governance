@@ -7,6 +7,19 @@ interface IPFX {
     /// @notice An event thats emitted when a delegate account's vote balance changes
     event DelegateVotesChanged(address indexed delegate, uint256 previousBalance, uint256 newBalance);
 
+    event IncludedSrc(address account);
+    event IncludedDst(address account);
+    event ExcludedSrc(address account);
+    event ExcludedDst(address account);
+    event SetReflectionFee(uint96 _reflectionFee);
+    event SetDevFee(uint96 _devFee);
+    event SetReflectionAddress(address _reflectionAddress);
+    event SetDevAddress(address _devAddress);
+    event StartedReflecting();
+    event StoppedReflecting();
+    event StartedDevFees();
+    event StoppedDevFees();
+
     function permit(
         address owner,
         address spender,
