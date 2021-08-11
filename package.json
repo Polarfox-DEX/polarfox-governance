@@ -13,7 +13,7 @@
     "@nomiclabs/hardhat-ethers": "^2.0.2",
     "@nomiclabs/hardhat-waffle": "^2.0.1",
     "@openzeppelin/contracts": "^4.1.0",
-    "@polarfox/core": "^2.4.1",
+    "@polarfox/core": "^2.5.2",
     "@polarfox/periphery": "^2.0.3",
     "chai": "^4.2.0",
     "eth-revert-reason": "^1.0.3",

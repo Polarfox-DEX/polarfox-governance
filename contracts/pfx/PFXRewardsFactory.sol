@@ -3,7 +3,8 @@ pragma solidity ^0.8.6;
 
 // TODO: Step #3: sell PFX for AVAX in the PFX/AVAX pool
 // TODO: Step #4: distribute AVAX to PFX-LP holders and LM participants, but not to the SR contracts
-// TODO: Exclude the following addresses: SR contracts, locked liquidity
+// TODO: Exclude the SR contracts from rewards
+// TODO: Exclude the locked liquidity from rewards
 // TODO: Investigate - see if the LP itself can store PFX-LP (instead of just minting / burning). If that is the case, exclude it from the rewards
 // TODO: Write: this contract is not using SafeMath because we are using Solidity >= 0.8.0
 
@@ -11,10 +12,9 @@ pragma solidity ^0.8.6;
 // TODO: Add comments to functions
 
 import '@polarfox/periphery/contracts/interfaces/IPolarfoxRouter.sol';
-import '@polarfox/core/contracts/interfaces/IPolarfoxLiquidity.sol'; // TODO: Add holders to IPolarfoxLiquidity
-// TODO: Add IStakingRewards
+import '@polarfox/core/contracts/interfaces/IPolarfoxLiquidity.sol';
+import '@polarfox/core/contracts/interfaces/IStakingRewards.sol';
 
-// TODO: Add holders to IStakingRewards
 // TODO: Add event for setReflectionAddress
 // TODO: Add event for setPfxAvaxPair
 // TODO: Add event for setPfxRouter
@@ -30,8 +30,7 @@ import './IERC20.sol';
 
 contract PFXRewardsFactory is Ownable {
     struct PfxPool {
-        string name;
-        uint ratio;
+        uint256 ratio;
         address pool;
         address stakingRewards;
     }
@@ -48,8 +47,11 @@ contract PFXRewardsFactory is Ownable {
     // Polarfox router address
     address public pfxRouter;
 
-    // Minimum PFX balance to be able to give rewards
+    // Minimum PFX balance to be able to swap PFX against AVAX
     uint256 public minimumPfxBalance;
+
+    // Minimum AVAX balance to be able to give rewards
+    uint256 public minimumAvaxBalance;
 
     // Eligible PFX pools
     PfxPool[] public pfxPools;
@@ -65,6 +67,7 @@ contract PFXRewardsFactory is Ownable {
         pfxAvaxPair = pfxAvaxPair_;
         pfxRouter = pfxRouter_;
         minimumPfxBalance = 1000000000000000000000; // 1,000 PFX
+        minimumAvaxBalance = 1 ether; // 1 AVAX
 
         // TODO: Initialize pfxPools
     }
@@ -75,7 +78,7 @@ contract PFXRewardsFactory is Ownable {
         uint256 amountIn = IERC20(pfx).balanceOf(address(this));
 
         // Exit if the PFX balance is below a certain amount
-        require(amountIn < minimumPfxBalance, 'PFXRewardsFactory::swapPfxToAvax: PFX balance is below minimum');
+        if (amountIn < minimumPfxBalance) return;
 
         // Create the PFX/AVAX path
         address[] memory path = new address[](2);
@@ -97,46 +100,67 @@ contract PFXRewardsFactory is Ownable {
 
     function sendAvax() public {
         // Determine the amount of AVAX to send accross all pools
-        uint toSendTotal = address(this).balance;
+        uint256 toSendTotal = address(this).balance - (1 ether); // Keep 1 AVAX to account for inaccuracies in divisions
 
         // Exit if the AVAX balance is below a certain amount
-        // ...
-
-    struct PfxPool {
-        string name;
-        uint ratio;
-        address pool;
-        address stakingRewards;
-    }
+        if (toSendTotal < minimumAvaxBalance) return;
 
         // For each supported pool
-        for (uint i = 0; i < pfxPools.length; i++) {
-            // Find the relevant PFX-LP holders
-            address[] pfxLpHolders = IPolarfoxLiquidity(pfxPools[i].pool).holders();
+        for (uint256 i = 0; i < pfxPools.length; i++) {
+            uint256 j;
+
+            // Find the relevant PFX-LP holders, including the relevant StakingRewards address
+            address[] memory pfxLpHoldersIncludingStakingRewards = IPolarfoxLiquidity(pfxPools[i].pool).holders();
 
             // Remove the relevant StakingRewards address from the PFX-LP holders
-            uint stakingRewardsIndex = IPolarfoxLiquidity(pfxPools[i].pool).holdersIndex[pfxPools[i].stakingRewards];
-            pfxLpHolders[stakingRewardsIndex] = pfxLpHolders[pfxLpHolders.length-1];
-            pfxLpHolders.pop();
+            // We cannot use "pop()" because pfxLpHolders is of type address[] memory, so we have to use a loop
+            address[] memory pfxLpHolders = new address[](pfxLpHoldersIncludingStakingRewards.length - 1);
+            uint256 stakingRewardsIndex = IPolarfoxLiquidity(pfxPools[i].pool).holdersIndex(pfxPools[i].stakingRewards);
+
+            for (j = 0; j < stakingRewardsIndex; j++) {
+                pfxLpHolders[j] = pfxLpHoldersIncludingStakingRewards[j];
+            }
+
+            for (j = stakingRewardsIndex + 1; j < IPolarfoxLiquidity(pfxPools[i].pool).holders().length; j++) {
+                pfxLpHolders[j - 1] = pfxLpHoldersIncludingStakingRewards[j];
+            }
 
             // Find the relevant liquidity mining participants
-            address[] lmParticipants = IStakingRewards(pfxAvaxPools[i]).stakingRewards();
+            address[] memory lmParticipants = IStakingRewards(pfxPools[i].stakingRewards).holders();
 
-            // TODO: Using the total supply of PFX-LP in the math would save us from having to compute it ourselves by summing everything, which is computer-intensive.
-            // TODO: However, is it exact? What if we are missing some PFX-LP?
-            // TODO: In theory, it should all add up, unless some addresses are blacklisted.
+            // Get the total supply of PFX-LP for this pool
+            uint256 totalSupply = IPolarfoxLiquidity(pfxPools[i].pool).totalSupply();
 
-            // Determine the amount of AVAX to send for this pool
-            uint toSend = toSendTotal * pfxPools[i].ratio / 1000;
+            // Determine the amount of AVAX to send for this pool, then divide it by the total supply
+            uint256 toSendPool = (toSendTotal * pfxPools[i].ratio) / (1000 * totalSupply);
+            uint256 toSend;
 
-            // Send the AVAX
-            for (...) {
-                // ...
+            // Send the AVAX to PFX-LP holders
+            for (j = 0; j < pfxLpHolders.length; j++) {
+                toSend = (IPolarfoxLiquidity(pfxPools[i].pool).balanceOf(pfxLpHolders[j]) * toSendPool);
+                if (toSend > 0) {
+                    require(payable(pfxLpHolders[j]).send(toSend), 'PFXRewardsFactory::sendAvax: a transfer to a PFX-LP holder failed');
+                }
+            }
+
+            // Send the AVAX to liquidity mining participants
+            for (j = 0; j < lmParticipants.length; j++) {
+                toSend = (IStakingRewards(pfxPools[i].stakingRewards).balanceOf(lmParticipants[j]) * toSendPool);
+                if (toSend > 0) {
+                    require(payable(lmParticipants[j]).send(toSend), 'PFXRewardsFactory::sendAvax: a transfer to a liquidity mining participant failed');
+                }
             }
         }
     }
 
     function distributeRewards() public {
+        // Throw an error if there is no PFX to swap and no AVAX to send
+        // TODO: Is this the right approach? Will that crash the Clock contract?
+        require(
+            IERC20(pfx).balanceOf(address(this)) < minimumPfxBalance && address(this).balance - (1 ether) < minimumAvaxBalance,
+            'PFXRewardsFactory::distributeRewards: no rewards to distribute'
+        );
+
         swapPfxToAvax();
         sendAvax();
     }
@@ -159,5 +183,9 @@ contract PFXRewardsFactory is Ownable {
 
     function setMinimumPfxBalance(uint256 _minimumPfxBalance) public onlyOwner {
         minimumPfxBalance = _minimumPfxBalance;
+    }
+
+    function setMinimumAvaxBalance(uint256 _minimumAvaxBalance) public onlyOwner {
+        minimumAvaxBalance = _minimumAvaxBalance;
     }
 }

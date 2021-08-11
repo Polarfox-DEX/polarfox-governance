@@ -12,6 +12,7 @@ import './IERC20.sol';
 // TODO: Add other events
 // TODO: Write: this contract is not using SafeMath because we are using Solidity >= 0.8.0
 // TODO: Add comments to functions
+// TODO: Think: should the setters for the dev and PRF addresses be available to the owner of this contract or to said addresses themselves?
 
 contract PFX is Ownable, IPFX, IERC20 {
     /// @notice EIP-20 token name for this token
