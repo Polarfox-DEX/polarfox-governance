@@ -1,14 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.6;
 
-// TODO: Step #3: sell PFX for AVAX in the PFX/AVAX pool
-// TODO: Step #4: distribute AVAX to PFX-LP holders and LM participants, but not to the SR contracts
-// TODO: Exclude the SR contracts from rewards
-// TODO: Exclude the locked liquidity from rewards
-// TODO: Investigate - see if the LP itself can store PFX-LP (instead of just minting / burning). If that is the case, exclude it from the rewards
-// TODO: Write: this contract is not using SafeMath because we are using Solidity >= 0.8.0
-
 // TODO: Add proper introductory comment
+// TODO: Write: this contract is not using SafeMath because we are using Solidity >= 0.8.0
 // TODO: Add comments to functions
 
 import '@polarfox/periphery/contracts/interfaces/IPolarfoxRouter.sol';
@@ -22,8 +16,6 @@ import '@polarfox/core/contracts/interfaces/IStakingRewards.sol';
 // TODO: This contract should be properly excluded from PFX fees
 // TODO: Think - should we define functions to update PFX and WAVAX? Or is it better to deploy a new contract if it ever comes to that?
 // TODO: When we change PFXRewardsFactory, should we send the PFX and AVAX to the new one? Or is this dangerous from a safety perspective?
-// TODO: Write getters and setters for PfxPool
-// TODO: Write getters and setters for lockedLiquidityAddresses. In the setter, require that the list does not contain SR addresses, otherwise it'd break the code
 
 import './Ownable.sol';
 import './IPFX.sol';
@@ -74,9 +66,9 @@ contract PFXRewardsFactory is Ownable {
         minimumPfxBalance = 1000000000000000000000; // 1,000 PFX
         minimumAvaxBalance = 1 ether; // 1 AVAX
 
-        // TODO: Initialize pfxPools
-        // TODO: Initialize lockedLiquidityAddresses
-        // TODO: Initialize isLockedLiquidity
+        // Consider the 0x0 address locked liquidity
+        lockedLiquidityAddresses.push(address(0));
+        isLockedLiquidity[address(0)];
     }
 
     // Public methods
@@ -158,7 +150,10 @@ contract PFXRewardsFactory is Ownable {
             for (j = 0; j < lmParticipants.length; j++) {
                 toSend = (IStakingRewards(pfxPools[i].stakingRewards).balanceOf(lmParticipants[j]) * toSendPool);
                 if (toSend > 0) {
-                    require(payable(lmParticipants[j]).send(toSend), 'PFXRewardsFactory::sendAvax: a transfer to a liquidity mining participant failed');
+                    require(
+                        payable(lmParticipants[j]).send(toSend),
+                        'PFXRewardsFactory::sendAvax: a transfer to a liquidity mining participant failed'
+                    );
                 }
             }
         }
@@ -198,5 +193,66 @@ contract PFXRewardsFactory is Ownable {
 
     function setMinimumAvaxBalance(uint256 _minimumAvaxBalance) public onlyOwner {
         minimumAvaxBalance = _minimumAvaxBalance;
+    }
+
+    function setPfxPools(
+        uint256[] memory ratios,
+        address[] memory pools,
+        address[] memory stakingRewards
+    ) public onlyOwner {
+        require(
+            ratios.length == pools.length && ratios.length == stakingRewards.length,
+            'PFXRewardsFactory::setPfxPools: all arrays should have the same length'
+        );
+
+        uint256 i;
+        uint256 summedRatios = 0;
+        for (i = 0; i < ratios.length; i++) {
+            summedRatios += ratios[i];
+        }
+        require(summedRatios == 1, 'PFXRewardsFactory::setPfxPools: the summed up ratios should be equal to 1');
+
+        // Empty the previous array
+        while (pfxPools.length > 0) {
+            pfxPools.pop();
+        }
+
+        for (i = 0; i < ratios.length; i++) {
+            pfxPools.push(PfxPool(ratios[i], pools[i], stakingRewards[i]));
+        }
+    }
+
+    function addLockedLiquidityAddress(address _address) public onlyOwner {
+        require(
+            !isLockedLiquidity[_address],
+            'PFXRewardsFactory::addLockedLiquidityAddress: the provided address is already registered as locked liquidity'
+        );
+
+        for (uint256 i = 0; i < pfxPools.length; i++) {
+            require(
+                _address != pfxPools[i].stakingRewards,
+                'PFXRewardsFactory::addLockedLiquidityAddress: the provided address is a StakingRewards address'
+            );
+        }
+
+        isLockedLiquidity[_address] = true;
+        lockedLiquidityAddresses.push(_address);
+    }
+
+    function removeLockedLiquidityAddress(address _address) public onlyOwner {
+        require(
+            !isLockedLiquidity[_address],
+            'PFXRewardsFactory::removeLockedLiquidityAddress: the provided address is not registered as locked liquidity'
+        );
+
+        isLockedLiquidity[_address] = false;
+
+        for (uint256 i = 0; i < lockedLiquidityAddresses.length; i++) {
+            if (lockedLiquidityAddresses[i] == _address) {
+                lockedLiquidityAddresses[i] = lockedLiquidityAddresses[lockedLiquidityAddresses.length - 1];
+                lockedLiquidityAddresses.pop();
+                return;
+            }
+        }
     }
 }
