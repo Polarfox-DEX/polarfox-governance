@@ -134,8 +134,9 @@ contract PFXRewardsFactory is Ownable {
             // No need to remove locked liquidity accounts as they do not participate in liquidity mining anyway
             address[] memory lmParticipants = IStakingRewards(pfxPools[i].stakingRewards).holders();
 
-            // Get the total supply of PFX-LP for this pool
+            // Get the total supply of PFX-LP for this pool. If it is 0, exit
             uint256 totalSupply = IPolarfoxLiquidity(pfxPools[i].pool).totalSupply();
+            if (totalSupply == 0) continue;
 
             // Remove the locked liquidity addresses' balances from the total supply
             for (j = 0; j < lockedLiquidityAddresses.length; j++) {
