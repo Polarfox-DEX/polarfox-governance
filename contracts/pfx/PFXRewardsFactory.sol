@@ -23,6 +23,7 @@ import '@polarfox/core/contracts/interfaces/IStakingRewards.sol';
 // TODO: Think - should we define functions to update PFX and WAVAX? Or is it better to deploy a new contract if it ever comes to that?
 // TODO: When we change PFXRewardsFactory, should we send the PFX and AVAX to the new one? Or is this dangerous from a safety perspective?
 // TODO: Write getters and setters for PfxPool
+// TODO: Write getters and setters for lockedLiquidityAddresses. In the setter, require that the list does not contain SR addresses, otherwise it'd break the code
 
 import './Ownable.sol';
 import './IPFX.sol';
@@ -56,6 +57,10 @@ contract PFXRewardsFactory is Ownable {
     // Eligible PFX pools
     PfxPool[] public pfxPools;
 
+    // Locked liquidity addresses. They should not receive rewards
+    address[] public lockedLiquidityAddresses;
+    mapping(address => bool) public isLockedLiquidity;
+
     constructor(
         address pfx_,
         address wavax_,
@@ -70,6 +75,8 @@ contract PFXRewardsFactory is Ownable {
         minimumAvaxBalance = 1 ether; // 1 AVAX
 
         // TODO: Initialize pfxPools
+        // TODO: Initialize lockedLiquidityAddresses
+        // TODO: Initialize isLockedLiquidity
     }
 
     // Public methods
@@ -109,27 +116,31 @@ contract PFXRewardsFactory is Ownable {
         for (uint256 i = 0; i < pfxPools.length; i++) {
             uint256 j;
 
-            // Find the relevant PFX-LP holders, including the relevant StakingRewards address
-            address[] memory pfxLpHoldersIncludingStakingRewards = IPolarfoxLiquidity(pfxPools[i].pool).holders();
+            // Find the relevant PFX-LP holders, including the relevant StakingRewards address and locked liquidity addresses
+            address[] memory pfxLpHoldersTmp = IPolarfoxLiquidity(pfxPools[i].pool).holders();
 
-            // Remove the relevant StakingRewards address from the PFX-LP holders
+            // Remove the relevant StakingRewards address and locked liquidity addresses from the PFX-LP holders
             // We cannot use "pop()" because pfxLpHolders is of type address[] memory, so we have to use a loop
-            address[] memory pfxLpHolders = new address[](pfxLpHoldersIncludingStakingRewards.length - 1);
+            address[] memory pfxLpHolders = new address[](pfxLpHoldersTmp.length - lockedLiquidityAddresses.length - 1); // "- 1" is for the StakingRewards address
             uint256 stakingRewardsIndex = IPolarfoxLiquidity(pfxPools[i].pool).holdersIndex(pfxPools[i].stakingRewards);
+            uint256 offset = 0;
 
-            for (j = 0; j < stakingRewardsIndex; j++) {
-                pfxLpHolders[j] = pfxLpHoldersIncludingStakingRewards[j];
-            }
-
-            for (j = stakingRewardsIndex + 1; j < IPolarfoxLiquidity(pfxPools[i].pool).holders().length; j++) {
-                pfxLpHolders[j - 1] = pfxLpHoldersIncludingStakingRewards[j];
+            for (j = 0; j < IPolarfoxLiquidity(pfxPools[i].pool).holders().length; j++) {
+                if (isLockedLiquidity[pfxLpHoldersTmp[j]] || i == stakingRewardsIndex) offset++;
+                else pfxLpHolders[j - offset] = pfxLpHoldersTmp[j];
             }
 
             // Find the relevant liquidity mining participants
+            // No need to remove locked liquidity accounts as they do not participate in liquidity mining anyway
             address[] memory lmParticipants = IStakingRewards(pfxPools[i].stakingRewards).holders();
 
             // Get the total supply of PFX-LP for this pool
             uint256 totalSupply = IPolarfoxLiquidity(pfxPools[i].pool).totalSupply();
+
+            // Remove the locked liquidity addresses' balances from the total supply
+            for (j = 0; j < lockedLiquidityAddresses.length; j++) {
+                totalSupply -= IPolarfoxLiquidity(pfxPools[i].pool).balanceOf(lockedLiquidityAddresses[j]);
+            }
 
             // Determine the amount of AVAX to send for this pool, then divide it by the total supply
             uint256 toSendPool = (toSendTotal * pfxPools[i].ratio) / (1000 * totalSupply);
