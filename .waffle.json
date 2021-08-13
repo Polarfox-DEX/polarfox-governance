@@ -1,6 +1,8 @@
 {
   "compilerType": "solcjs",
   "compilerVersion": "./node_modules/solc",
+  "sourceDirectory": "./contracts/pfx",
+  "outputDirectory": "./build",
   "outputType": "all",
   "compilerOptions": {
     "outputSelection": {

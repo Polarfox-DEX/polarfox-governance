@@ -10,7 +10,7 @@ import '@polarfox/core/contracts/interfaces/IPolarfoxLiquidity.sol';
 import '@polarfox/core/contracts/interfaces/IStakingRewards.sol';
 
 // TODO: This contract should be properly excluded from PFX fees
-// TODO: Think - should we define functions to update PFX and WAVAX? Or is it better to deploy a new contract if it ever comes to that?
+// TODO: Think - should we define a function to update PFX? Or is it better to deploy a new contract if it ever comes to that?
 // TODO: When we change PFXRewardsFactory, should we send the PFX and AVAX to the new one? Or is this dangerous from a safety perspective?
 
 import './Ownable.sol';
@@ -25,12 +25,6 @@ contract PFXRewardsFactory is Ownable {
 
     /// @notice PFX address
     address public pfx;
-
-    /// @notice WAVAX address
-    address public wavax;
-
-    /// @notice PFX/AVAX pair address
-    address public pfxAvaxPair;
 
     /// @notice Polarfox router address
     address public pfxRouter;
@@ -48,10 +42,9 @@ contract PFXRewardsFactory is Ownable {
     address[] public lockedLiquidityAddresses;
     mapping(address => bool) public isLockedLiquidity;
 
-    // TODO: Add definitions
+    // TODO: Add comments
     event SwappedPfx(uint256 amountIn);
     event SentAvax(uint256 toSendTotal);
-    event SetPfxAvaxPair(address _pfxAvaxPair);
     event SetPfxRouter(address _pfxRouter);
     event SetMinimumPfxBalance(uint256 _minimumPfxBalance);
     event SetMinimumAvaxBalance(uint256 _minimumAvaxBalance);
@@ -61,15 +54,11 @@ contract PFXRewardsFactory is Ownable {
 
     constructor(
         address pfx_,
-        address wavax_,
-        address pfxAvaxPair_,
         address pfxRouter_
     ) {
         pfx = pfx_;
-        wavax = wavax_;
-        pfxAvaxPair = pfxAvaxPair_;
         pfxRouter = pfxRouter_;
-        minimumPfxBalance = 1000000000000000000000; // 1,000 PFX
+        minimumPfxBalance = 10000000000000000000; // 10 PFX
         minimumAvaxBalance = 1 ether; // 1 AVAX
 
         // Consider the 0x0 address locked liquidity
@@ -78,6 +67,8 @@ contract PFXRewardsFactory is Ownable {
     }
 
     // Public methods
+    receive() external payable {}
+
     function swapPfxToAvax() public {
         // The amount of PFX to swap
         uint256 amountIn = IERC20(pfx).balanceOf(address(this));
@@ -88,13 +79,13 @@ contract PFXRewardsFactory is Ownable {
         // Create the PFX/AVAX path
         address[] memory path = new address[](2);
         path[0] = pfx;
-        path[1] = wavax;
+        path[1] = IPolarfoxRouter(pfxRouter).WAVAX();
 
         // Approve the router
-        IERC20(pfx).approve(address(this), amountIn);
+        IERC20(pfx).approve(pfxRouter, amountIn);
 
         // Call to swapExactTokensForAvax
-        IPolarfoxRouter(pfxRouter).swapExactTokensForAVAX(
+        IPolarfoxRouter(pfxRouter).swapExactTokensForAVAXSupportingFeeOnTransferTokens(
             amountIn,
             0, // Minimum output amount - we accept any amount of AVAX
             path, // Path for PFX/AVAX
@@ -106,10 +97,13 @@ contract PFXRewardsFactory is Ownable {
     }
 
     function sendAvax() public {
-        // Determine the amount of AVAX to send accross all pools
-        uint256 toSendTotal = address(this).balance - (1 ether); // Keep 1 AVAX to account for inaccuracies in divisions
+        // Exit if the AVAX balance is below 1 AVAX
+        if (address(this).balance < 1 ether) return;
 
-        // Exit if the AVAX balance is below a certain amount
+        // Determine the amount of AVAX to send accross all pools
+        uint256 toSendTotal = address(this).balance - 1 ether; // Keep 1 AVAX to account for inaccuracies in divisions
+
+        // Exit if the AVAX balance is below the minimum
         if (toSendTotal < minimumAvaxBalance) return;
 
         // For each supported pool
@@ -167,14 +161,16 @@ contract PFXRewardsFactory is Ownable {
             }
         }
 
-        emit SentAvax(toSendTotal);
+        if (pfxPools.length > 0) emit SentAvax(toSendTotal);
     }
 
     function distributeRewards() public {
         // Throw an error if there is no PFX to swap and no AVAX to send
         // TODO: Is this the right approach? Will that crash the Clock contract?
         require(
-            IERC20(pfx).balanceOf(address(this)) < minimumPfxBalance && address(this).balance - (1 ether) < minimumAvaxBalance,
+            IERC20(pfx).balanceOf(address(this)) < minimumPfxBalance &&
+                address(this).balance > 1 ether &&
+                address(this).balance - 1 ether < minimumAvaxBalance,
             'PFXRewardsFactory::distributeRewards: no rewards to distribute'
         );
 
@@ -183,12 +179,6 @@ contract PFXRewardsFactory is Ownable {
     }
 
     // Owner methods
-    function setPfxAvaxPair(address _pfxAvaxPair) public onlyOwner {
-        pfxAvaxPair = _pfxAvaxPair;
-
-        emit SetPfxAvaxPair(_pfxAvaxPair);
-    }
-
     function setPfxRouter(address _pfxRouter) public onlyOwner {
         pfxRouter = _pfxRouter;
 
@@ -222,7 +212,7 @@ contract PFXRewardsFactory is Ownable {
         for (i = 0; i < ratios.length; i++) {
             summedRatios += ratios[i];
         }
-        require(summedRatios == 1, 'PFXRewardsFactory::setPfxPools: the summed up ratios should be equal to 1');
+        require(summedRatios == 1000, 'PFXRewardsFactory::setPfxPools: the summed up ratios should be equal to 1000 (100%)');
 
         // Empty the previous array
         while (pfxPools.length > 0) {
