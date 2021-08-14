@@ -1,7 +1,7 @@
 {
   "name": "@polarfox/governance",
-  "version": "0.1.0",
-  "description": "Governance contracts for the Polarfox protocol",
+  "version": "0.2.1",
+  "description": "Governance contracts for the Polarfox ecosystem",
   "author": "Polarfox team",
   "license": "MIT",
   "scripts": {
@@ -17,8 +17,8 @@
     "@nomiclabs/hardhat-ethers": "^2.0.2",
     "@nomiclabs/hardhat-waffle": "^2.0.1",
     "@openzeppelin/contracts": "^4.1.0",
-    "@polarfox/core": "^2.5.2",
-    "@polarfox/periphery": "^2.0.5",
+    "@polarfox/core": "^2.6.0",
+    "@polarfox/periphery": "^2.0.8",
     "chai": "^4.2.0",
     "eth-revert-reason": "^1.0.3",
     "ethereum-waffle": "^3.3.0",

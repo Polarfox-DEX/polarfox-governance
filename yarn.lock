@@ -741,15 +741,25 @@
     bignumber.js "^9.0.1"
     web3 "^1.0.0-beta.35"
 
+"@polarfox/core@^2.6.0":
+  version "2.6.0"
+  resolved "https://registry.yarnpkg.com/@polarfox/core/-/core-2.6.0.tgz#d596da4c2cb1a1bccd6f44fe9c78da8511446d5b"
+  integrity sha512-KO0vBbA75j69OYZbPMX/G383VhB3Vp1Ya8loJ7LdcTAJxCcC7ifp5N4U13rT75hGAQ805Fv+45p1ZmR7xq/1rw==
+  dependencies:
+    "@ethersproject/solidity" "^5.0.10"
+    "@truffle/hdwallet-provider" "1.4.0"
+    bignumber.js "^9.0.1"
+    web3 "^1.0.0-beta.35"
+
 "@polarfox/lib@^1.0.1":
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/@polarfox/lib/-/lib-1.0.1.tgz#2a439079f5006fab805207677977d865d56778a4"
   integrity sha512-XxDN1gzzx9QtMHg2njJ1luoub6yErPlnwXaEwxzceM5qRsctT8YSCrYuX0BiDHKCTYef2mtrFCPgq6hqUK7aCw==
 
-"@polarfox/periphery@^2.0.5":
-  version "2.0.7"
-  resolved "https://registry.yarnpkg.com/@polarfox/periphery/-/periphery-2.0.7.tgz#df46113fe5fc56fc7a50d61b8d07a9ac644cb0da"
-  integrity sha512-nx4HeSXPs6bk6BxzpPpBKhyojQ8ujmTtkqX/BANYu+6uYEKQxHUV2JtCqYCNEnBhEipZQhJWJt+NMOEm45noOg==
+"@polarfox/periphery@^2.0.8":
+  version "2.0.8"
+  resolved "https://registry.yarnpkg.com/@polarfox/periphery/-/periphery-2.0.8.tgz#121508831e654077cdbb56c9d281622d8ba965cb"
+  integrity sha512-iLmIa/2TPmjj8Qh3E4BEZBkN1H+umAxWist18qcRsQPMX/Zxb1pLcfd8arlAdwdFcw0aXQJx4RPX2ukB0nZpig==
   dependencies:
     "@ethersproject/bignumber" "^5.0.15"
     "@polarfox/core" "^2.5.2"

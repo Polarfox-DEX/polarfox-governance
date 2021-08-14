@@ -12,6 +12,7 @@ import '@polarfox/core/contracts/interfaces/IStakingRewards.sol';
 // TODO: This contract should be properly excluded from PFX fees
 // TODO: Think - should we define a function to update PFX? Or is it better to deploy a new contract if it ever comes to that?
 // TODO: When we change PFXRewardsFactory, should we send the PFX and AVAX to the new one? Or is this dangerous from a safety perspective?
+// TODO: Delete all TODOs
 
 import './Ownable.sol';
 import './IERC20.sol';
@@ -103,69 +104,9 @@ contract PFXRewardsFactory is Ownable {
         // Exit if the AVAX balance is below the minimum
         if (toSendTotal < minimumAvaxBalance) return;
 
-        uint256 j;
         // For each supported pool
         for (uint256 i = 0; i < pfxPools.length; i++) {
-            // Find the relevant PFX-LP holders, including the relevant StakingRewards address and locked liquidity addresses
-            address[] memory pfxLpHoldersTmp = IPolarfoxLiquidity(pfxPools[i].pool).holders();
-
-            // Find the relevant liquidity mining participants
-            // No need to remove locked liquidity accounts as they do not participate in liquidity mining anyway
-            address[] memory lmParticipants = IStakingRewards(pfxPools[i].stakingRewards).holders();
-
-            // If the liquidity mining pool has participants, it makes it a PFX-LP holder, so we have to remove it from the address list
-            uint256 pfxLpHoldersLength = pfxLpHoldersTmp.length - lockedLiquidityAddresses.length;
-            if (lmParticipants.length > 0) pfxLpHoldersLength--;
-            address[] memory pfxLpHolders = new address[](pfxLpHoldersLength);
-
-            // Remove the relevant StakingRewards address and locked liquidity addresses from the PFX-LP holders
-            // We cannot use "pop()" because pfxLpHolders is of type address[] memory, so we have to use a loop
-            uint256 stakingRewardsIndex;
-            if (lmParticipants.length > 0)
-                stakingRewardsIndex = IPolarfoxLiquidity(pfxPools[i].pool).holdersIndex(pfxPools[i].stakingRewards);
-            else stakingRewardsIndex = type(uint256).max;
-            uint256 offset = 0;
-
-            for (j = 0; j < pfxLpHoldersTmp.length; j++) {
-                if (isLockedLiquidity[pfxLpHoldersTmp[j]] || i == stakingRewardsIndex) offset++;
-                else pfxLpHolders[j - offset] = pfxLpHoldersTmp[j];
-            }
-
-            // Get the total supply of PFX-LP for this pool. If it is 0, exit
-            uint256 totalSupply = IPolarfoxLiquidity(pfxPools[i].pool).totalSupply();
-            if (totalSupply == 0) continue;
-
-            // Remove the locked liquidity addresses' balances from the total supply
-            for (j = 0; j < lockedLiquidityAddresses.length; j++) {
-                totalSupply -= IPolarfoxLiquidity(pfxPools[i].pool).balanceOf(lockedLiquidityAddresses[j]);
-            }
-
-            // Determine the amount of AVAX to send for this pool
-            uint256 toSendPool = (toSendTotal * pfxPools[i].ratio) / 1000;
-            uint256 toSend;
-
-            // Send the AVAX to PFX-LP holders
-            for (j = 0; j < pfxLpHolders.length; j++) {
-                // Determine the amount of AVAX to send
-                toSend = (IPolarfoxLiquidity(pfxPools[i].pool).balanceOf(pfxLpHolders[j]) * toSendPool) / totalSupply;
-
-                // Send the AVAX
-                if (toSend > 0) {
-                    // TODO: If a PFX-LP holder is a contract not configured to receive AVAX, this will fail. We should remove this require()
-                    require(payable(pfxLpHolders[j]).send(toSend), 'PFXRewardsFactory::sendAvax: a transfer to a PFX-LP holder failed');
-                }
-            }
-
-            // Send the AVAX to liquidity mining participants
-            for (j = 0; j < lmParticipants.length; j++) {
-                toSend = (IStakingRewards(pfxPools[i].stakingRewards).balanceOf(lmParticipants[j]) * toSendPool) / totalSupply;
-                if (toSend > 0) {
-                    require(
-                        payable(lmParticipants[j]).send(toSend),
-                        'PFXRewardsFactory::sendAvax: a transfer to a liquidity mining participant failed'
-                    );
-                }
-            }
+            sendAvaxPool(toSendTotal, i);
         }
 
         if (pfxPools.length > 0) emit SentAvax(toSendTotal);
@@ -183,6 +124,85 @@ contract PFXRewardsFactory is Ownable {
 
         swapPfxToAvax();
         sendAvax();
+    }
+
+    // Internal methods
+    function sendAvaxPool(uint256 toSendTotal, uint256 i) internal {
+        uint256 j;
+
+        // Find the relevant PFX-LP holders, including the relevant StakingRewards address and locked liquidity addresses
+        address[] memory pfxLpHoldersTmp = IPolarfoxLiquidity(pfxPools[i].pool).holders();
+
+        // Find the relevant liquidity mining participants
+        // No need to remove locked liquidity accounts as they do not participate in liquidity mining anyway
+        address[] memory lmParticipants = IStakingRewards(pfxPools[i].stakingRewards).holders();
+
+        // Determine the number of locked liquidity addresses in this pool
+        uint256 lockedLiquidityAddressesCount = 0;
+        for (j = 0; j < lockedLiquidityAddresses.length; j++) {
+            if (IPolarfoxLiquidity(pfxPools[i].pool).balanceOf(lockedLiquidityAddresses[j]) > 0) {
+                lockedLiquidityAddressesCount++;
+            }
+        }
+
+        // Calculate the length of the PFX-LP holders array
+        uint256 pfxLpHoldersLength = pfxLpHoldersTmp.length - lockedLiquidityAddressesCount;
+
+        // If the liquidity mining pool has participants, it makes it a PFX-LP holder, so we have to remove it from the address list
+        if (lmParticipants.length > 0) pfxLpHoldersLength--;
+        address[] memory pfxLpHolders = new address[](pfxLpHoldersLength);
+
+        // Remove the relevant StakingRewards address and locked liquidity addresses from the PFX-LP holders
+        // We cannot use "pop()" because pfxLpHolders is of type address[] memory, so we have to use a loop
+        uint256 stakingRewardsIndex;
+        if (lmParticipants.length > 0) {
+            stakingRewardsIndex = IPolarfoxLiquidity(pfxPools[i].pool).holdersIndex(pfxPools[i].stakingRewards);
+        } else {
+            stakingRewardsIndex = type(uint256).max;
+        }
+        uint256 offset = 0;
+
+        for (j = 0; j < pfxLpHoldersTmp.length; j++) {
+            if (isLockedLiquidity[pfxLpHoldersTmp[j]] || j == stakingRewardsIndex) offset++;
+            else pfxLpHolders[j - offset] = pfxLpHoldersTmp[j];
+        }
+
+        // Get the total supply of PFX-LP for this pool. If it is 0, exit
+        uint256 totalSupply = IPolarfoxLiquidity(pfxPools[i].pool).totalSupply();
+        if (totalSupply == 0) return;
+
+        // Remove the locked liquidity addresses' balances from the total supply
+        for (j = 0; j < lockedLiquidityAddresses.length; j++) {
+            totalSupply -= IPolarfoxLiquidity(pfxPools[i].pool).balanceOf(lockedLiquidityAddresses[j]);
+        }
+
+        // Determine the amount of AVAX to send for this pool
+        uint256 toSendPool = (toSendTotal * pfxPools[i].ratio) / 1000;
+        uint256 toSend;
+
+        // Send the AVAX to PFX-LP holders
+        for (j = 0; j < pfxLpHolders.length; j++) {
+            // Determine the amount of AVAX to send
+            toSend = (IPolarfoxLiquidity(pfxPools[i].pool).balanceOf(pfxLpHolders[j]) * toSendPool) / totalSupply;
+
+            // Send the AVAX
+            if (toSend > 0) {
+                // We cannot ensure everyone will receive their tokens, but this avoids a crash due to contracts holding PFX-LP and not being able to receive AVAX
+                payable(pfxLpHolders[j]).send(toSend);
+            }
+        }
+
+        // Send the AVAX to liquidity mining participants
+        for (j = 0; j < lmParticipants.length; j++) {
+            // Determine the amount of AVAX to send
+            toSend = (IStakingRewards(pfxPools[i].stakingRewards).balanceOf(lmParticipants[j]) * toSendPool) / totalSupply;
+
+            // Send the AVAX
+            if (toSend > 0) {
+                // We cannot ensure everyone will receive their tokens, but this avoids a crash due to contracts holding PFX-LP and not being able to receive AVAX
+                payable(lmParticipants[j]).send(toSend);
+            }
+        }
     }
 
     // Owner methods
