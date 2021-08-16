@@ -36,7 +36,7 @@ contract PFXRewardsFactory is Ownable {
     PfxPool[] public pfxPools;
 
     /// @notice Gas limit - when there is less gas then this number, we should stop executing the contract
-    uint256 gasLimit;
+    uint256 public gasLimit;
 
     // TODO: Set the fields below to internal or public?
     /// @notice Current amount of AVAX being distributed
