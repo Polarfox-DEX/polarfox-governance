@@ -1,10 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.6;
 
-// TODO: Add proper introductory comment
-// TODO: Write: this contract is not using SafeMath because we are using Solidity >= 0.8.0
-// TODO: Add comments to functions
-// TODO: Optimize gas usage
+// TODO: Optimize gas usage (use uint96 whenever possible, for instance)
 
 import '@polarfox/periphery/contracts/interfaces/IPolarfoxRouter.sol';
 import '@polarfox/core/contracts/interfaces/IPolarfoxLiquidity.sol';
@@ -13,6 +10,21 @@ import '@polarfox/core/contracts/interfaces/IStakingRewards.sol';
 import './Ownable.sol';
 import './IERC20.sol';
 
+/**
+ * The PFX rewards factory contract.
+ * 🦊
+ *
+ * This contract receives the reflection fees from the PFX token. It converts them to AVAX,
+ * and then proceeds to distribute them to liquidity providers among specific pools on the
+ * Polarfox decentralized exchange. Said pools can be changed to allow for more flexibility.
+ *
+ * If there are many liquidity providers, gas block limits will not allow the contract to
+ * distribute all the rewards at once, so it will have to be called multiple times in order
+ * to do so. This is achieved by storing the IDs of the last processed addresses and
+ * starting the next execution there.
+ *
+ * Note: this contract is not using the SafeMath library as it is using Solidity 0.8.6.
+ */
 contract PFXRewardsFactory is Ownable {
     struct PfxPool {
         uint256 ratio;
@@ -38,7 +50,6 @@ contract PFXRewardsFactory is Ownable {
     /// @notice Gas limit - when there is less gas then this number, we should stop executing the contract
     uint256 public gasLimit;
 
-    // TODO: Set the fields below to internal or public?
     /// @notice Current amount of AVAX being distributed
     uint256 public currentBatchAmount_;
 
@@ -64,14 +75,31 @@ contract PFXRewardsFactory is Ownable {
     address[] public lockedLiquidityAddresses;
     mapping(address => bool) public isLockedLiquidity;
 
+    /// @notice An event thats emitted when some PFX is swapped for AVAX
     event SwappedPfx(uint256 amountIn);
+
+    /// @notice An event thats emitted when AVAX is sent to liquidity providers
     event SentAvax(uint256 toSendTotal);
+
+    /// @notice An event thats emitted when the Polarfox router is set
     event SetPfxRouter(address _pfxRouter);
+
+    /// @notice An event thats emitted when the minimum PFX balance is set
     event SetMinimumPfxBalance(uint256 _minimumPfxBalance);
+
+    /// @notice An event thats emitted when the minimum AVAX balance is set
     event SetMinimumAvaxBalance(uint256 _minimumAvaxBalance);
+
+    /// @notice An event thats emitted when PFX pools are set
     event SetPfxPools(uint256[] ratios, address[] pools, address[] stakingRewards);
+
+    /// @notice An event thats emitted when the gas limit is set
     event SetGasLimit(uint256 _gasLimit);
+
+    /// @notice An event thats emitted when a locked liquidity address is set
     event AddedLockedLiquidityAddress(address _address);
+
+    /// @notice An event thats emitted when a locked liquidity address is removed
     event RemovedLockedLiquidityAddress(address _address);
 
     constructor(address pfx_, address pfxRouter_) {
@@ -79,7 +107,7 @@ contract PFXRewardsFactory is Ownable {
         pfxRouter = pfxRouter_;
         minimumPfxBalance = 10000000000000000000; // 10 PFX
         minimumAvaxBalance = 1 ether; // 1 AVAX
-        gasLimit = 6000; // TODO: Try and lower this as much as possible - be aware of the loops on the locked liquidity addresses
+        gasLimit = 6000;
 
         // Consider the 0x0 address locked liquidity
         lockedLiquidityAddresses.push(address(0));
@@ -87,8 +115,11 @@ contract PFXRewardsFactory is Ownable {
     }
 
     // Public methods
+
+    // Necessary to be able to receive AVAX
     receive() external payable {}
 
+    // Swaps PFX for AVAX on the Polarfox decentralized exchange
     function swapPfxToAvax() public {
         // The amount of PFX to swap
         uint256 amountIn = IERC20(pfx).balanceOf(address(this));
@@ -116,6 +147,7 @@ contract PFXRewardsFactory is Ownable {
         emit SwappedPfx(amountIn);
     }
 
+    // Sends AVAX to liquidity providers on specific pools. Stops when it runs out of gas
     function sendAvax() public {
         // Exit if the current batch amount is 0
         if (currentBatchAmount_ == 0) return;
@@ -140,6 +172,7 @@ contract PFXRewardsFactory is Ownable {
         if (pfxPools.length > 0) emit SentAvax(currentBatchAmount_);
     }
 
+    // Attempts to swap PFX for AVAX and distribute said AVAX to liquidity providers on specific pools
     function distributeRewards() public {
         // If the factory is not currently processing a batch of rewards
         if (currentBatchAmount_ == 0) {
@@ -174,6 +207,8 @@ contract PFXRewardsFactory is Ownable {
     }
 
     // Internal methods
+
+    // Collects and stores the data required to distribute AVAX to liquidity providers on a specific pool
     function setUpPool(uint256 i, IPolarfoxLiquidity currentPool) internal {
         // Setup - only needs to be run once per pool
         uint256 j;
@@ -203,6 +238,7 @@ contract PFXRewardsFactory is Ownable {
         isSetUpPool_ = true;
     }
 
+    // Sends as many AVAX rewards to the liquidity providers on a specific pool as possible. Exits when it runs out of gas
     function sendAvaxPool(uint256 i) internal returns (bool outOfGas) {
         IPolarfoxLiquidity currentPool = IPolarfoxLiquidity(pfxPools[i].pool);
         uint256 j;
@@ -287,24 +323,29 @@ contract PFXRewardsFactory is Ownable {
     }
 
     // Owner methods
+
+    // Sets a new Polarfox router
     function setPfxRouter(address _pfxRouter) public onlyOwner {
         pfxRouter = _pfxRouter;
 
         emit SetPfxRouter(_pfxRouter);
     }
 
+    // Sets a new minimum PFX balance to allow swapping PFX to AVAX
     function setMinimumPfxBalance(uint256 _minimumPfxBalance) public onlyOwner {
         minimumPfxBalance = _minimumPfxBalance;
 
         emit SetMinimumPfxBalance(_minimumPfxBalance);
     }
 
+    // Sets a new minimum AVAX balance to allow distributing rewards
     function setMinimumAvaxBalance(uint256 _minimumAvaxBalance) public onlyOwner {
         minimumAvaxBalance = _minimumAvaxBalance;
 
         emit SetMinimumAvaxBalance(_minimumAvaxBalance);
     }
 
+    // Sets new PFX pools to distribute rewards to
     function setPfxPools(
         uint256[] memory ratios,
         address[] memory pools,
@@ -334,12 +375,14 @@ contract PFXRewardsFactory is Ownable {
         emit SetPfxPools(ratios, pools, stakingRewards);
     }
 
+    // Sets a new gas limit
     function setGasLimit(uint256 _gasLimit) public onlyOwner {
         gasLimit = _gasLimit;
 
         emit SetGasLimit(_gasLimit);
     }
 
+    // Adds a new address to the locked liquidity addresses list
     function addLockedLiquidityAddress(address _address) public onlyOwner {
         require(
             !isLockedLiquidity[_address],
@@ -359,6 +402,7 @@ contract PFXRewardsFactory is Ownable {
         emit AddedLockedLiquidityAddress(_address);
     }
 
+    // Removes an address from the locked liquidity address list
     function removeLockedLiquidityAddress(address _address) public onlyOwner {
         require(
             !isLockedLiquidity[_address],
