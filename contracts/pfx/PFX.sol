@@ -5,11 +5,21 @@ import './Ownable.sol';
 import './IPFX.sol';
 import './IERC20.sol';
 
-// TODO: Add proper introductory comment
-// TODO: Write: this contract is not using SafeMath because we are using Solidity >= 0.8.0
-// TODO: Add comments to functions
-// TODO: Add comments on events in IPFX
-
+/**
+ * The Polarfox token ($PFX) contract.
+ * Core of the Polarfox ecosystem.
+ * 🦊
+ *
+ * On each transaction, the token sends 3% of the transaction amount to a reflection address and 0.5% to a dev address.
+ * Those numbers can be changed at any time, as well as the recipients. The tax can also be disabled if the need arises.
+ *
+ * Since the recipients can be contracts, this means the PFX token has flexible token mechanics.
+ * At launch, PFX will convert these 3% to AVAX and distribute them among liquidity providers on specific pools.
+ * After launch, the PFX token can switch its token mechanics and turn, for instance, into a deflationary token.
+ *
+ * Caps on said numbers are implemented for safety reasons.
+ * Note: this contract is not using the SafeMath library as it is using Solidity 0.8.6.
+ */
 contract PFX is Ownable, IPFX, IERC20 {
     /// @notice EIP-20 token name for this token
     string public constant name = 'Polarfox';
@@ -408,63 +418,75 @@ contract PFX is Ownable, IPFX, IERC20 {
         balances[dst] += amount;
     }
 
+    // Includes a account in the reflection / dev fees as a sender. Only callable by the owner
     function includeSrc(address account) public override onlyOwner {
         isExcludedSrc[account] = false;
         emit IncludedSrc(account);
     }
 
+    // Includes a account in the reflection / dev fees as a recipient. Only callable by the owner
     function includeDst(address account) public override onlyOwner {
         isExcludedDst[account] = false;
         emit IncludedDst(account);
     }
 
+    // Excludes a account in the reflection / dev fees as a sender. Only callable by the owner
     function excludeSrc(address account) public override onlyOwner {
         isExcludedSrc[account] = true;
         emit ExcludedSrc(account);
     }
 
+    // Excludes a account in the reflection / dev fees as a recipient. Only callable by the owner
     function excludeDst(address account) public override onlyOwner {
         isExcludedDst[account] = true;
         emit ExcludedDst(account);
     }
 
+    // Sets a new reflection fee. Only callable by the owner
     function setReflectionFee(uint96 _reflectionFee) public override onlyOwner {
         require(_reflectionFee <= maximumReflectionFee, 'PFX::setReflectionFee: new reflection fee exceeds maximum reflection fee');
         reflectionFee = _reflectionFee;
         emit SetReflectionFee(_reflectionFee);
     }
 
+    // Sets a new dev fee. Only callable by the owner
     function setDevFee(uint96 _devFee) public override onlyOwner {
         require(_devFee <= maximumDevFee, 'PFX::setDevFee: new dev fee exceeds maximum dev fee');
         devFee = _devFee;
         emit SetDevFee(_devFee);
     }
 
+    // Sets a new reflection address. Only callable by the owner
     function setReflectionAddress(address _reflectionAddress) public override onlyOwner {
         reflectionAddress = _reflectionAddress;
         emit SetReflectionAddress(_reflectionAddress);
     }
 
+    // Sets a new dev address. Only callable by the owner
     function setDevAddress(address _devAddress) public override onlyOwner {
         devAddress = _devAddress;
         emit SetDevAddress(_devAddress);
     }
 
+    // Enables transferring tokens to the reflection address. Only callable by the owner
     function startReflecting() public override onlyOwner {
         isReflecting = true;
         emit StartedReflecting();
     }
 
+    // Disables transferring tokens to the reflection address. Only callable by the owner
     function stopReflecting() public override onlyOwner {
         isReflecting = false;
         emit StoppedReflecting();
     }
 
+    // Enables transferring tokens to the dev address. Only callable by the owner
     function startDevFees() public override onlyOwner {
         isChargingDevFees = true;
         emit StartedDevFees();
     }
 
+    // Disables transferring tokens to the dev address. Only callable by the owner
     function stopDevFees() public override onlyOwner {
         isChargingDevFees = false;
         emit StoppedDevFees();

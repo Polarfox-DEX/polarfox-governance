@@ -4,20 +4,44 @@ pragma solidity ^0.8.6;
 interface IPFX {
     /// @notice An event thats emitted when an account changes its delegate
     event DelegateChanged(address indexed delegator, address indexed fromDelegate, address indexed toDelegate);
+
     /// @notice An event thats emitted when a delegate account's vote balance changes
     event DelegateVotesChanged(address indexed delegate, uint256 previousBalance, uint256 newBalance);
 
+    /// @notice An event thats emitted when an account is included in fees as a sender
     event IncludedSrc(address account);
+
+    /// @notice An event thats emitted when an account is included in fees as a recipient
     event IncludedDst(address account);
+
+    /// @notice An event thats emitted when an account is excluded in fees as a sender
     event ExcludedSrc(address account);
+
+    /// @notice An event thats emitted when an anccount is excluded in fees as a recipient
     event ExcludedDst(address account);
+
+    /// @notice An event thats emitted when a new reflection fee is set
     event SetReflectionFee(uint96 _reflectionFee);
+
+    /// @notice An event thats emitted when a new dev fee is set
     event SetDevFee(uint96 _devFee);
+
+    /// @notice An event thats emitted when a new reflection address is set
     event SetReflectionAddress(address _reflectionAddress);
+
+    /// @notice An event thats emitted when a new dev address is set
     event SetDevAddress(address _devAddress);
+
+    /// @notice An event thats emitted when reflecting starts
     event StartedReflecting();
+
+    /// @notice An event thats emitted when reflecting stops
     event StoppedReflecting();
+
+    /// @notice An event thats emitted when dev fees start
     event StartedDevFees();
+
+    /// @notice An event thats emitted when dev fees stop
     event StoppedDevFees();
 
     function permit(
