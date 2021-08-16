@@ -19,7 +19,7 @@ const {
     AIRDROP_AMOUNT
 } = require('./governanceConstants')
 
-const pfxContract = require('../artifacts/contracts/pfx/PFX.sol/Pfx.json')
+const pfxContract = require('../artifacts/contracts/pfx/PFX.sol/PFX.json')
 
 const chainId = IS_PRODUCTION ? CHAIN_ID.AVALANCHE : CHAIN_ID.FUJI
 

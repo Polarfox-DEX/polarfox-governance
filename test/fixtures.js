@@ -5,7 +5,7 @@ const { solidity, deployContract } = require('ethereum-waffle');
 
 const { TWO_DAYS } = require('./utils');
 
-const Pfx = require('../artifacts/contracts/pfx/PFX.sol/Pfx.json');
+const Pfx = require('../artifacts/contracts/pfx/PFX.sol/PFX.json');
 const Timelock = require('../artifacts/contracts/Timelock.sol/Timelock.json');
 const GovernorAlpha = require('../artifacts/contracts/GovernorAlpha.sol/GovernorAlpha.json');
 
