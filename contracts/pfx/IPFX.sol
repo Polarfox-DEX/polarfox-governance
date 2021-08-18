@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.6;
+pragma solidity ^0.8.7;
 
 interface IPFX {
     /// @notice An event thats emitted when an account changes its delegate

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.6;
+pragma solidity ^0.8.7;
 
 // TODO: Optimize gas usage (use uint96 whenever possible, for instance)
 
@@ -23,7 +23,7 @@ import './IERC20.sol';
  * to do so. This is achieved by storing the IDs of the last processed addresses and
  * starting the next execution there.
  *
- * Note: this contract is not using the SafeMath library as it is using Solidity 0.8.6.
+ * Note: this contract is not using the SafeMath library as it is using Solidity 0.8.7.
  */
 contract PFXRewardsFactory is Ownable {
     struct PfxPool {

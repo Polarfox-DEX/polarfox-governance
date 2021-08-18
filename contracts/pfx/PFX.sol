@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.6;
+pragma solidity ^0.8.7;
 
 import './Ownable.sol';
 import './IPFX.sol';
@@ -18,7 +18,7 @@ import './IERC20.sol';
  * After launch, the PFX token can switch its token mechanics and turn, for instance, into a deflationary token.
  *
  * Caps on said numbers are implemented for safety reasons.
- * Note: this contract is not using the SafeMath library as it is using Solidity 0.8.6.
+ * Note: this contract is not using the SafeMath library as it is using Solidity 0.8.7.
  */
 contract PFX is Ownable, IPFX, IERC20 {
     /// @notice EIP-20 token name for this token
