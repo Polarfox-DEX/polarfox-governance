@@ -75,31 +75,31 @@ contract PFXRewardsFactory is Ownable {
     address[] public lockedLiquidityAddresses;
     mapping(address => bool) public isLockedLiquidity;
 
-    /// @notice An event thats emitted when some PFX is swapped for AVAX
+    /// @notice An event that is emitted when some PFX is swapped for AVAX
     event SwappedPfx(uint256 amountIn);
 
-    /// @notice An event thats emitted when AVAX is sent to liquidity providers
+    /// @notice An event that is emitted when AVAX is sent to liquidity providers
     event SentAvax(uint256 toSendTotal);
 
-    /// @notice An event thats emitted when the Polarfox router is set
+    /// @notice An event that is emitted when the Polarfox router is set
     event SetPfxRouter(address _pfxRouter);
 
-    /// @notice An event thats emitted when the minimum PFX balance is set
+    /// @notice An event that is emitted when the minimum PFX balance is set
     event SetMinimumPfxBalance(uint256 _minimumPfxBalance);
 
-    /// @notice An event thats emitted when the minimum AVAX balance is set
+    /// @notice An event that is emitted when the minimum AVAX balance is set
     event SetMinimumAvaxBalance(uint256 _minimumAvaxBalance);
 
-    /// @notice An event thats emitted when PFX pools are set
+    /// @notice An event that is emitted when PFX pools are set
     event SetPfxPools(uint256[] ratios, address[] pools, address[] stakingRewards);
 
-    /// @notice An event thats emitted when the gas limit is set
+    /// @notice An event that is emitted when the gas limit is set
     event SetGasLimit(uint256 _gasLimit);
 
-    /// @notice An event thats emitted when a locked liquidity address is set
+    /// @notice An event that is emitted when a locked liquidity address is set
     event AddedLockedLiquidityAddress(address _address);
 
-    /// @notice An event thats emitted when a locked liquidity address is removed
+    /// @notice An event that is emitted when a locked liquidity address is removed
     event RemovedLockedLiquidityAddress(address _address);
 
     constructor(address pfx_, address pfxRouter_) {
