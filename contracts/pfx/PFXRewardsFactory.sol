@@ -212,7 +212,7 @@ contract PFXRewardsFactory is Ownable {
     function setUpPool(uint256 i, IPolarfoxLiquidity currentPool) internal {
         // Setup - only needs to be run once per pool
         uint256 j;
-        uint totalSupplyTmp;
+        uint256 totalSupplyTmp;
 
         // Get the total supply of PFX-LP for this pool. If it is 0, exit
         totalSupplyTmp = currentPool.totalSupply();
@@ -295,6 +295,9 @@ contract PFXRewardsFactory is Ownable {
                 return true;
             }
         }
+
+        // Do not reexecute the loop on top
+        lastProcessedPfxLpAddress_ = pfxLpHolders.length;
 
         // Send the AVAX to liquidity mining participants
         for (j = lastProcessedLmAddress_; j < lmParticipants.length; j++) {
