@@ -741,10 +741,10 @@
     bignumber.js "^9.0.1"
     web3 "^1.0.0-beta.35"
 
-"@polarfox/core@^2.6.0":
-  version "2.6.0"
-  resolved "https://registry.yarnpkg.com/@polarfox/core/-/core-2.6.0.tgz#d596da4c2cb1a1bccd6f44fe9c78da8511446d5b"
-  integrity sha512-KO0vBbA75j69OYZbPMX/G383VhB3Vp1Ya8loJ7LdcTAJxCcC7ifp5N4U13rT75hGAQ805Fv+45p1ZmR7xq/1rw==
+"@polarfox/core@^2.6.1":
+  version "2.6.1"
+  resolved "https://registry.yarnpkg.com/@polarfox/core/-/core-2.6.1.tgz#30e1c4a091b538351cbf674729df3875c6475c10"
+  integrity sha512-0AISMY2kjq7ESy+QUeHKvz0Zc0OKTtREUMSWN7QIsDMtfVfhdzKto2lHWrGmUUI6NQHHeJF3MZCga0MvnSM2PQ==
   dependencies:
     "@ethersproject/solidity" "^5.0.10"
     "@truffle/hdwallet-provider" "1.4.0"

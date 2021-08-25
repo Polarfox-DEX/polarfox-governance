@@ -57,10 +57,16 @@ contract PFXRewardsFactory is Ownable {
     uint256 public lastProcessedPool_;
 
     /// @notice Index of the last processed PFX-LP address
-    uint256 public lastProcessedPfxLpAddress_;
+    uint256 public nextPfxLpAddressToProcess_;
 
     /// @notice Index of the last processed liquidity mining address
-    uint256 public lastProcessedLmAddress_;
+    uint256 public nextLmAddressToProcess_;
+
+    /// @notice Length of the currently processed pool's holders array. We keep track of this for safety purposes
+    uint256 public holdersLength_;
+
+    /// @notice Length of the currently processed pool's holders array. We keep track of this for safety purposes
+    uint256 public lmParticipantsLength_;
 
     /// @notice True if the currently processed pool is set up, false otherwise
     bool public isSetUpPool_;
@@ -121,6 +127,9 @@ contract PFXRewardsFactory is Ownable {
 
     // Swaps PFX for AVAX on the Polarfox decentralized exchange
     function swapPfxToAvax() public {
+        // This function should not be callable by contracts
+        require(tx.origin == msg.sender, 'PFXRewardsFactory::swapPfxToAvax: Caller cannot be a contract');
+
         // The amount of PFX to swap
         uint256 amountIn = IERC20(pfx).balanceOf(address(this));
 
@@ -159,8 +168,8 @@ contract PFXRewardsFactory is Ownable {
 
             // Update the last processed indexes
             lastProcessedPool_++;
-            lastProcessedPfxLpAddress_ = 0;
-            lastProcessedLmAddress_ = 0;
+            nextPfxLpAddressToProcess_ = 0;
+            nextLmAddressToProcess_ = 0;
 
             // Mark the next pool as not set up
             isSetUpPool_ = false;
@@ -190,8 +199,8 @@ contract PFXRewardsFactory is Ownable {
 
             // Initialize values
             lastProcessedPool_ = 0;
-            lastProcessedPfxLpAddress_ = 0;
-            lastProcessedLmAddress_ = 0;
+            nextPfxLpAddressToProcess_ = 0;
+            nextLmAddressToProcess_ = 0;
 
             // Mark the next pool as not set up
             isSetUpPool_ = false;
@@ -232,7 +241,13 @@ contract PFXRewardsFactory is Ownable {
         toSendPool_ = (currentBatchAmount_ * pfxPools[i].ratio) / 1000;
 
         // Initialize values
-        lastProcessedPfxLpAddress_ = 0;
+        nextPfxLpAddressToProcess_ = 0;
+
+        // Store the length of the current pool's holders array
+        holdersLength_ = currentPool.holders().length;
+
+        // Store the length of the current liquidity mining pool's holders array
+        lmParticipantsLength_ = IStakingRewards(pfxPools[i].stakingRewards).holders().length;
 
         // Mark the pool as set up
         isSetUpPool_ = true;
@@ -274,7 +289,7 @@ contract PFXRewardsFactory is Ownable {
         uint256 toSend;
 
         // Send the AVAX to PFX-LP holders
-        for (j = lastProcessedPfxLpAddress_; j < pfxLpHolders.length; j++) {
+        for (j = nextPfxLpAddressToProcess_; j < holdersLength_ && j < pfxLpHolders.length; j++) {
             // Ignore illegal addresses, represented by address(0)
             if (pfxLpHolders[j] == address(0)) continue;
 
@@ -290,17 +305,17 @@ contract PFXRewardsFactory is Ownable {
             // Gas check
             if (gasleft() < gasLimit) {
                 // Out of gas: exit
-                lastProcessedPfxLpAddress_ = j + 1; // We will start at the next holder
+                nextPfxLpAddressToProcess_ = j + 1; // We will start at the next holder
 
                 return true;
             }
         }
 
-        // Do not reexecute the loop on top
-        lastProcessedPfxLpAddress_ = pfxLpHolders.length;
+        // Do not reexecute the loop above
+        nextPfxLpAddressToProcess_ = holdersLength_;
 
         // Send the AVAX to liquidity mining participants
-        for (j = lastProcessedLmAddress_; j < lmParticipants.length; j++) {
+        for (j = nextLmAddressToProcess_; j < lmParticipantsLength_ && j < lmParticipants.length; j++) {
             // Ignore illegal addresses, represented by address(0)
             if (lmParticipants[j] == address(0)) continue;
 
@@ -316,7 +331,7 @@ contract PFXRewardsFactory is Ownable {
             // Gas check
             if (gasleft() < gasLimit) {
                 // Out of gas: exit
-                lastProcessedLmAddress_ = j + 1; // We will start at the next holder
+                nextLmAddressToProcess_ = j + 1; // We will start at the next holder
 
                 return true;
             }
