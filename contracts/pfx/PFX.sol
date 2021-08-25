@@ -34,10 +34,10 @@ contract PFX is Ownable, IPFX, IERC20 {
     uint256 public constant override totalSupply = 30_000_000e18; // 30 million PFX
 
     /// @notice Maximum value for the LP reflection fee - it cannot be set up above this number
-    uint96 public constant maximumReflectionFee = 100; // 10% = 100/1000
+    uint96 public constant maximumReflectionFee = 1000; // 10% = 1000/10000
 
     /// @notice Maximum value for the dev fee - it cannot be set up above this number
-    uint96 public constant maximumDevFee = 30; // 3% = 30/1000
+    uint96 public constant maximumDevFee = 300; // 3% = 300/10000
 
     /// @notice Current reflection fee
     uint96 public reflectionFee;
@@ -112,8 +112,8 @@ contract PFX is Ownable, IPFX, IERC20 {
         devAddress = _devAddress;
 
         // Initial values for reflection and dev fees
-        reflectionFee = 30; // 3.0% = 30/1000
-        devFee = 5; // 0.5% = 5/1000
+        reflectionFee = 300; // 3.0% = 300/10000
+        devFee = 50; // 0.5% = 50/10000
 
         // Turn on reflection and dev fees
         isReflecting = true;
@@ -383,7 +383,7 @@ contract PFX is Ownable, IPFX, IERC20 {
 
         if (isReflecting) {
             // Calculate reflection amount
-            reflectionAmount = (amount * reflectionFee) / 1000;
+            reflectionAmount = (amount * reflectionFee) / 10000;
 
             // Send reflection amount to the reflection address
             balances[reflectionAddress] += reflectionAmount;
@@ -391,7 +391,7 @@ contract PFX is Ownable, IPFX, IERC20 {
 
         if (isChargingDevFees) {
             // Calculate dev amount
-            devAmount = (amount * devFee) / 1000;
+            devAmount = (amount * devFee) / 10000;
 
             // Send dev amount to the dev address
             balances[devAddress] += devAmount;
