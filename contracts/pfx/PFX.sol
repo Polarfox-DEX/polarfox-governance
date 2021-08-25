@@ -420,13 +420,13 @@ contract PFX is Ownable, IPFX, IERC20 {
 
     // Includes a account in the reflection / dev fees as a sender. Only callable by the owner
     function includeSrc(address account) public override onlyOwner {
-        isExcludedSrc[account] = false;
+        delete isExcludedSrc[account];
         emit IncludedSrc(account);
     }
 
     // Includes a account in the reflection / dev fees as a recipient. Only callable by the owner
     function includeDst(address account) public override onlyOwner {
-        isExcludedDst[account] = false;
+        delete isExcludedDst[account];
         emit IncludedDst(account);
     }
 
