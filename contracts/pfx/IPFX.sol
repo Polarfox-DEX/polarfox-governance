@@ -26,6 +26,9 @@ interface IPFX {
     /// @notice An event that is emitted when a new dev fee is set
     event SetDevFee(uint96 _devFee);
 
+    /// @notice An event that is emitted when a new rewards threshold is set
+    event SetRewardsThreshold(uint96 _rewardsThreshold);
+
     /// @notice An event that is emitted when a new reflection address is set
     event SetReflectionAddress(address _reflectionAddress);
 
@@ -80,6 +83,8 @@ interface IPFX {
     function setReflectionFee(uint96 _reflectionFee) external;
 
     function setDevFee(uint96 _devFee) external;
+
+    function setRewardsThreshold(uint96 _rewardsThreshold) external;
 
     function setReflectionAddress(address _reflectionAddress) external;
 

@@ -39,6 +39,9 @@ contract PFX is Ownable, IPFX, IERC20 {
     /// @notice Maximum value for the dev fee - it cannot be set up above this number
     uint96 public constant maximumDevFee = 300; // 3% = 300/10000
 
+    /// @notice Maximum value for the rewards threshold - it cannot be set up above this number
+    uint96 public constant maximumRewardsThreshold = 500000; // 5% = 500000/10000000
+
     /// @notice Current reflection fee
     uint96 public reflectionFee;
 
@@ -50,6 +53,9 @@ contract PFX is Ownable, IPFX, IERC20 {
 
     /// @notice Dev address - the address that receives the dev funding fees
     address public devAddress;
+
+    /// @notice How much of the total supply of PFX-LP one needs to be eligible for rewards
+    uint96 public rewardsThreshold;
 
     /// @notice True if the token is reflecting to PFX-LP holders, false otherwise
     bool public isReflecting;
@@ -114,6 +120,9 @@ contract PFX is Ownable, IPFX, IERC20 {
         // Initial values for reflection and dev fees
         reflectionFee = 300; // 3.0% = 300/10000
         devFee = 50; // 0.5% = 50/10000
+
+        // Initial value for the rewards threshold
+        rewardsThreshold = 5000; // 0.05% = 5000/10000000
 
         // Turn on reflection and dev fees
         isReflecting = true;
@@ -454,6 +463,16 @@ contract PFX is Ownable, IPFX, IERC20 {
         require(_devFee <= maximumDevFee, 'PFX::setDevFee: new dev fee exceeds maximum dev fee');
         devFee = _devFee;
         emit SetDevFee(_devFee);
+    }
+
+    // Sets a new rewards threshold. Only callable by the owner
+    function setRewardsThreshold(uint96 _rewardsThreshold) public override onlyOwner {
+        require(
+            _rewardsThreshold <= maximumRewardsThreshold,
+            'PFX::setRewardsThreshold: new rewards threshold exceeds maximum rewards threshold'
+        );
+        rewardsThreshold = _rewardsThreshold;
+        emit SetRewardsThreshold(_rewardsThreshold);
     }
 
     // Sets a new reflection address. Only callable by the owner
