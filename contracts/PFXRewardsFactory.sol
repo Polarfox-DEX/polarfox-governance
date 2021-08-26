@@ -7,8 +7,8 @@ import '@polarfox/periphery/contracts/interfaces/IPolarfoxRouter.sol';
 import '@polarfox/core/contracts/interfaces/IPolarfoxLiquidity.sol';
 import '@polarfox/core/contracts/interfaces/IStakingRewards.sol';
 
-import './Ownable.sol';
-import './IERC20.sol';
+import './libraries/Ownable.sol';
+import './interfaces/IERC20.sol';
 
 /**
  * The PFX rewards factory contract.

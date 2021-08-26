@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.7;
 
-import './Ownable.sol';
-import './IPFX.sol';
-import './IERC20.sol';
+import './libraries/Ownable.sol';
+import './interfaces/IPFX.sol';
+import './interfaces/IERC20.sol';
 
 /**
  * The Polarfox token ($PFX) contract.

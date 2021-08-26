@@ -1,8 +1,8 @@
 {
   "name": "@polarfox/governance",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Governance contracts for the Polarfox ecosystem",
-  "author": "Polarfox team",
+  "author": "Polarfox Labs",
   "license": "MIT",
   "scripts": {
     "test": "hardhat test",

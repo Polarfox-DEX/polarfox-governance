@@ -1,6 +1,6 @@
 pragma solidity ^0.5.16;
 
-import "./SafeMath.sol";
+import "./libraries/SafeMath.sol";
 
 /**
  * The Polarfox pair treasury vester contract.
