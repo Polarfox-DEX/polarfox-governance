@@ -299,7 +299,7 @@ contract PFXRewardsFactory is Ownable {
             // Send the AVAX
             if (toSend > 0) {
                 // We cannot ensure everyone will receive their tokens, but this avoids a crash due to contracts holding PFX-LP and not being able to receive AVAX
-                payable(pfxLpHolders[j]).send(toSend);
+                pfxLpHolders[j].call{value: toSend, gas: 3000}('');
             }
 
             // Gas check
@@ -325,7 +325,7 @@ contract PFXRewardsFactory is Ownable {
             // Send the AVAX
             if (toSend > 0) {
                 // We cannot ensure everyone will receive their tokens, but this avoids a crash due to contracts holding PFX-LP and not being able to receive AVAX
-                payable(lmParticipants[j]).send(toSend);
+                lmParticipants[j].call{value: toSend, gas: 3000}('');
             }
 
             // Gas check
