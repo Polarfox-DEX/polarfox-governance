@@ -72,6 +72,8 @@ interface IPFX {
 
     function getPriorVotes(address account, uint256 blockNumber) external view returns (uint96);
 
+    function rewardsThreshold() external view returns (uint96);
+
     function includeSrc(address account) external;
 
     function includeDst(address account) external;

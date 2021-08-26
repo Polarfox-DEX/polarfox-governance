@@ -55,7 +55,7 @@ contract PFX is Ownable, IPFX, IERC20 {
     address public devAddress;
 
     /// @notice How much of the total supply of PFX-LP one needs to be eligible for rewards
-    uint96 public rewardsThreshold;
+    uint96 public override rewardsThreshold;
 
     /// @notice True if the token is reflecting to PFX-LP holders, false otherwise
     bool public isReflecting;
