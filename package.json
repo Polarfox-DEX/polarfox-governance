@@ -1,19 +1,24 @@
 {
   "name": "@polarfox/governance",
-  "version": "0.0.5",
-  "description": "Governance contracts for the Polarfox protocol",
-  "author": "Polarfox team",
+  "version": "0.3.2",
+  "description": "Governance contracts for the Polarfox ecosystem",
+  "author": "Polarfox Labs",
   "license": "MIT",
   "scripts": {
     "test": "hardhat test",
-    "compile": "hardhat clean && hardhat compile",
+    "clean": "hardhat clean",
+    "flatten": "waffle flatten .waffle.json",
+    "precompile": "yarn clean",
+    "compile": "hardhat compile",
+    "postcompile": "yarn flatten",
     "deploy-governance:fuji": "hardhat run scripts/deploy-governance.js --network fuji"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.2",
     "@nomiclabs/hardhat-waffle": "^2.0.1",
     "@openzeppelin/contracts": "^4.1.0",
-    "@polarfox/core": "^2.2.2",
+    "@polarfox/core": "^2.6.1",
+    "@polarfox/periphery": "^2.0.8",
     "chai": "^4.2.0",
     "eth-revert-reason": "^1.0.3",
     "ethereum-waffle": "^3.3.0",
@@ -23,7 +28,7 @@
     "mocha": "^8.1.3",
     "prettier": "^2.1.1",
     "rimraf": "^3.0.2",
-    "solc": "0.5.16",
+    "solc": "0.8.7",
     "solidity-coverage": "^0.7.14",
     "@truffle/hdwallet-provider": "^1.4.0",
     "web3": "^1.0.0-beta.35"
