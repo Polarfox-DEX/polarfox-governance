@@ -27,7 +27,7 @@ interface IPFX {
     event SetDevFee(uint96 _devFee);
 
     /// @notice An event that is emitted when a new rewards threshold is set
-    event SetRewardsThreshold(uint96 _rewardsThreshold);
+    event SetRewardsThreshold(uint256 _rewardsThreshold);
 
     /// @notice An event that is emitted when a new reflection address is set
     event SetReflectionAddress(address _reflectionAddress);
@@ -72,7 +72,7 @@ interface IPFX {
 
     function getPriorVotes(address account, uint256 blockNumber) external view returns (uint96);
 
-    function rewardsThreshold() external view returns (uint96);
+    function rewardsThreshold() external view returns (uint256);
 
     function includeSrc(address account) external;
 
@@ -86,7 +86,7 @@ interface IPFX {
 
     function setDevFee(uint96 _devFee) external;
 
-    function setRewardsThreshold(uint96 _rewardsThreshold) external;
+    function setRewardsThreshold(uint256 _rewardsThreshold) external;
 
     function setReflectionAddress(address _reflectionAddress) external;
 
