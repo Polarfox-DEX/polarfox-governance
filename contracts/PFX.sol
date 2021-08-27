@@ -1,313 +1,26 @@
-// SPDX-License-Identifier: Unlicensed
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.7;
 
-// File contracts/SafeMath.sol
-
-pragma solidity ^0.6.12;
-pragma experimental ABIEncoderV2;
-
-// From https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/math/Math.sol
-// Subject to the MIT license.
+import './libraries/Ownable.sol';
+import './interfaces/IPFX.sol';
+import './interfaces/IERC20.sol';
 
 /**
- * @dev Wrappers over Solidity's arithmetic operations with added overflow
- * checks.
+ * The Polarfox token ($PFX) contract.
+ * Core of the Polarfox ecosystem.
+ * 🦊
  *
- * Arithmetic operations in Solidity wrap on overflow. This can easily result
- * in bugs, because programmers usually assume that an overflow raises an
- * error, which is the standard behavior in high level programming languages.
- * `SafeMath` restores this intuition by reverting the transaction when an
- * operation overflows.
+ * On each transaction, the token sends 3% of the transaction amount to a reflection address and 0.5% to a dev address.
+ * Those numbers can be changed at any time, as well as the recipients. The tax can also be disabled if the need arises.
  *
- * Using this library instead of the unchecked operations eliminates an entire
- * class of bugs, so it's recommended to use it always.
+ * Since the recipients can be contracts, this means the PFX token has flexible token mechanics.
+ * At launch, PFX will convert these 3% to AVAX and distribute them among liquidity providers on specific pools.
+ * After launch, the PFX token can switch its token mechanics and turn, for instance, into a deflationary token.
+ *
+ * Caps on said numbers are implemented for safety reasons.
+ * Note: this contract is not using the SafeMath library as it is using Solidity 0.8.7.
  */
-library SafeMath {
-    /**
-     * @dev Returns the addition of two unsigned integers, reverting on overflow.
-     *
-     * Counterpart to Solidity's `+` operator.
-     *
-     * Requirements:
-     * - Addition cannot overflow.
-     */
-    function add(uint256 a, uint256 b) internal pure returns (uint256) {
-        uint256 c = a + b;
-        require(c >= a, 'SafeMath: addition overflow');
-
-        return c;
-    }
-
-    /**
-     * @dev Returns the addition of two unsigned integers, reverting with custom message on overflow.
-     *
-     * Counterpart to Solidity's `+` operator.
-     *
-     * Requirements:
-     * - Addition cannot overflow.
-     */
-    function add(
-        uint256 a,
-        uint256 b,
-        string memory errorMessage
-    ) internal pure returns (uint256) {
-        uint256 c = a + b;
-        require(c >= a, errorMessage);
-
-        return c;
-    }
-
-    /**
-     * @dev Returns the subtraction of two unsigned integers, reverting on underflow (when the result is negative).
-     *
-     * Counterpart to Solidity's `-` operator.
-     *
-     * Requirements:
-     * - Subtraction cannot underflow.
-     */
-    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
-        return sub(a, b, 'SafeMath: subtraction underflow');
-    }
-
-    /**
-     * @dev Returns the subtraction of two unsigned integers, reverting with custom message on underflow (when the result is negative).
-     *
-     * Counterpart to Solidity's `-` operator.
-     *
-     * Requirements:
-     * - Subtraction cannot underflow.
-     */
-    function sub(
-        uint256 a,
-        uint256 b,
-        string memory errorMessage
-    ) internal pure returns (uint256) {
-        require(b <= a, errorMessage);
-        uint256 c = a - b;
-
-        return c;
-    }
-
-    /**
-     * @dev Returns the multiplication of two unsigned integers, reverting on overflow.
-     *
-     * Counterpart to Solidity's `*` operator.
-     *
-     * Requirements:
-     * - Multiplication cannot overflow.
-     */
-    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
-        // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
-        // benefit is lost if 'b' is also tested.
-        // See: https://github.com/OpenZeppelin/openzeppelin-contracts/pull/522
-        if (a == 0) {
-            return 0;
-        }
-
-        uint256 c = a * b;
-        require(c / a == b, 'SafeMath: multiplication overflow');
-
-        return c;
-    }
-
-    /**
-     * @dev Returns the multiplication of two unsigned integers, reverting on overflow.
-     *
-     * Counterpart to Solidity's `*` operator.
-     *
-     * Requirements:
-     * - Multiplication cannot overflow.
-     */
-    function mul(
-        uint256 a,
-        uint256 b,
-        string memory errorMessage
-    ) internal pure returns (uint256) {
-        // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
-        // benefit is lost if 'b' is also tested.
-        // See: https://github.com/OpenZeppelin/openzeppelin-contracts/pull/522
-        if (a == 0) {
-            return 0;
-        }
-
-        uint256 c = a * b;
-        require(c / a == b, errorMessage);
-
-        return c;
-    }
-
-    /**
-     * @dev Returns the integer division of two unsigned integers.
-     * Reverts on division by zero. The result is rounded towards zero.
-     *
-     * Counterpart to Solidity's `/` operator. Note: this function uses a
-     * `revert` opcode (which leaves remaining gas untouched) while Solidity
-     * uses an invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     * - The divisor cannot be zero.
-     */
-    function div(uint256 a, uint256 b) internal pure returns (uint256) {
-        return div(a, b, 'SafeMath: division by zero');
-    }
-
-    /**
-     * @dev Returns the integer division of two unsigned integers.
-     * Reverts with custom message on division by zero. The result is rounded towards zero.
-     *
-     * Counterpart to Solidity's `/` operator. Note: this function uses a
-     * `revert` opcode (which leaves remaining gas untouched) while Solidity
-     * uses an invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     * - The divisor cannot be zero.
-     */
-    function div(
-        uint256 a,
-        uint256 b,
-        string memory errorMessage
-    ) internal pure returns (uint256) {
-        // Solidity only automatically asserts when dividing by 0
-        require(b > 0, errorMessage);
-        uint256 c = a / b;
-        // assert(a == b * c + a % b); // There is no case in which this doesn't hold
-
-        return c;
-    }
-
-    /**
-     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
-     * Reverts when dividing by zero.
-     *
-     * Counterpart to Solidity's `%` operator. This function uses a `revert`
-     * opcode (which leaves remaining gas untouched) while Solidity uses an
-     * invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     * - The divisor cannot be zero.
-     */
-    function mod(uint256 a, uint256 b) internal pure returns (uint256) {
-        return mod(a, b, 'SafeMath: modulo by zero');
-    }
-
-    /**
-     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
-     * Reverts with custom message when dividing by zero.
-     *
-     * Counterpart to Solidity's `%` operator. This function uses a `revert`
-     * opcode (which leaves remaining gas untouched) while Solidity uses an
-     * invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     * - The divisor cannot be zero.
-     */
-    function mod(
-        uint256 a,
-        uint256 b,
-        string memory errorMessage
-    ) internal pure returns (uint256) {
-        require(b != 0, errorMessage);
-        return a % b;
-    }
-}
-
-contract Context {
-    function _msgSender() internal view virtual returns (address payable) {
-        return msg.sender;
-    }
-
-    function _msgData() internal view virtual returns (bytes memory) {
-        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
-        return msg.data;
-    }
-}
-
-/**
- * @dev Contract module which provides a basic access control mechanism, where
- * there is an account (an owner) that can be granted exclusive access to
- * specific functions.
- *
- * By default, the owner account will be the one that deploys the contract. This
- * can later be changed with {transferOwnership}.
- *
- * This module is used through inheritance. It will make available the modifier
- * `onlyOwner`, which can be applied to your functions to restrict their use to
- * the owner.
- */
-contract Ownable is Context {
-    address private _owner;
-    address private _previousOwner;
-    uint256 private _lockTime;
-
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-
-    /**
-     * @dev Initializes the contract setting the deployer as the initial owner.
-     */
-    constructor() internal {
-        address msgSender = _msgSender();
-        _owner = msgSender;
-        emit OwnershipTransferred(address(0), msgSender);
-    }
-
-    /**
-     * @dev Returns the address of the current owner.
-     */
-    function owner() public view returns (address) {
-        return _owner;
-    }
-
-    /**
-     * @dev Throws if called by any account other than the owner.
-     */
-    modifier onlyOwner() {
-        require(_owner == _msgSender(), 'Ownable: caller is not the owner');
-        _;
-    }
-
-    /**
-     * @dev Leaves the contract without owner. It will not be possible to call
-     * `onlyOwner` functions anymore. Can only be called by the current owner.
-     *
-     * NOTE: Renouncing ownership will leave the contract without an owner,
-     * thereby removing any functionality that is only available to the owner.
-     */
-    function renounceOwnership() public virtual onlyOwner {
-        emit OwnershipTransferred(_owner, address(0));
-        _owner = address(0);
-    }
-
-    /**
-     * @dev Transfers ownership of the contract to a new account (`newOwner`).
-     * Can only be called by the current owner.
-     */
-    function transferOwnership(address newOwner) public virtual onlyOwner {
-        require(newOwner != address(0), 'Ownable: new owner is the zero address');
-        emit OwnershipTransferred(_owner, newOwner);
-        _owner = newOwner;
-    }
-
-    function geUnlockTime() public view returns (uint256) {
-        return _lockTime;
-    }
-
-    //Locks the contract for owner for the amount of time provided
-    function lock(uint256 time) public virtual onlyOwner {
-        _previousOwner = _owner;
-        _owner = address(0);
-        _lockTime = now + time;
-        emit OwnershipTransferred(_owner, address(0));
-    }
-
-    //Unlocks the contract for owner when _lockTime is exceeds
-    function unlock() public virtual {
-        require(_previousOwner == msg.sender, "You don't have permission to unlock");
-        require(now > _lockTime, 'Contract is locked until 7 days');
-        emit OwnershipTransferred(_owner, _previousOwner);
-        _owner = _previousOwner;
-    }
-}
-
-contract Pfx is Ownable {
+contract PFX is Ownable, IPFX, IERC20 {
     /// @notice EIP-20 token name for this token
     string public constant name = 'Polarfox';
 
@@ -318,19 +31,22 @@ contract Pfx is Ownable {
     uint8 public constant decimals = 18;
 
     /// @notice Initial number of tokens in circulation
-    uint256 public constant initialSupply = 30_000_000e18; // 30 million PFX
+    uint256 public constant override totalSupply = 30_000_000e18; // 30 million PFX
 
-    /// @notice Maximum value for the burn fee - it cannot be set up above this number
-    uint96 public constant maximumBurnFee = 20; // 5% = 1/20
+    /// @notice Maximum value for the LP reflection fee - it cannot be set up above this number
+    uint96 public constant maximumReflectionFee = 1000; // 10% = 1000/10000
 
     /// @notice Maximum value for the dev fee - it cannot be set up above this number
-    uint96 public constant maximumDevFee = 1000; // 0.1% = 1/1000 
+    uint96 public constant maximumDevFee = 300; // 3% = 300/10000
 
-    /// @notice Current number of tokens in circulation
-    uint256 public totalSupply;
+    /// @notice Maximum value for the rewards threshold - it cannot be set up above this number
+    uint256 public constant maximumRewardsThreshold = 500000; // 5% = 500000/10000000
 
-    /// @notice Current burn fee
-    uint96 public burnFee;
+    /// @notice Current reflection fee
+    uint96 public reflectionFee;
+
+    /// @notice Reflection address - the address that receives the reflection fees
+    address public reflectionAddress;
 
     /// @notice Current dev funding fee
     uint96 public devFee;
@@ -338,16 +54,19 @@ contract Pfx is Ownable {
     /// @notice Dev address - the address that receives the dev funding fees
     address public devAddress;
 
-    /// @notice True if the token is burning, false otherwise
-    bool public isBurning;
+    /// @notice How much of the total supply of PFX-LP one needs to be eligible for rewards
+    uint256 public override rewardsThreshold;
+
+    /// @notice True if the token is reflecting to PFX-LP holders, false otherwise
+    bool public isReflecting;
 
     /// @notice True if dev fees are charged, false otherwise
-    bool public chargeDevFees;
+    bool public isChargingDevFees;
 
-    /// @notice IsExcludedSrc - the addresses that are excluded from the burn / dev fees when sending transactions
+    /// @notice IsExcludedSrc - the addresses that are excluded from the reflection / dev fees when sending transactions
     mapping(address => bool) public isExcludedSrc;
 
-    /// @notice IsExcludedDst - the addresses that are excluded from the burn / dev fees when receiving transactions
+    /// @notice IsExcludedDst - the addresses that are excluded from the reflection / dev fees when receiving transactions
     mapping(address => bool) public isExcludedDst;
 
     /// @dev Allowance amounts on behalf of others
@@ -372,12 +91,10 @@ contract Pfx is Ownable {
     mapping(address => uint32) public numCheckpoints;
 
     /// @notice The EIP-712 typehash for the contract's domain
-    bytes32 public constant DOMAIN_TYPEHASH =
-        keccak256('EIP712Domain(string name,uint256 chainId,address verifyingContract)');
+    bytes32 public constant DOMAIN_TYPEHASH = keccak256('EIP712Domain(string name,uint256 chainId,address verifyingContract)');
 
     /// @notice The EIP-712 typehash for the delegation struct used by the contract
-    bytes32 public constant DELEGATION_TYPEHASH =
-        keccak256('Delegation(address delegatee,uint256 nonce,uint256 expiry)');
+    bytes32 public constant DELEGATION_TYPEHASH = keccak256('Delegation(address delegatee,uint256 nonce,uint256 expiry)');
 
     /// @notice The EIP-712 typehash for the permit struct used by the contract
     bytes32 public constant PERMIT_TYPEHASH =
@@ -386,43 +103,38 @@ contract Pfx is Ownable {
     /// @notice A record of states for signing / validating signatures
     mapping(address => uint256) public nonces;
 
-    /// @notice An event thats emitted when an account changes its delegate
-    event DelegateChanged(address indexed delegator, address indexed fromDelegate, address indexed toDelegate);
-
-    /// @notice An event thats emitted when a delegate account's vote balance changes
-    event DelegateVotesChanged(address indexed delegate, uint256 previousBalance, uint256 newBalance);
-
-    /// @notice The standard EIP-20 transfer event
-    event Transfer(address indexed from, address indexed to, uint256 amount);
-
-    /// @notice The standard EIP-20 approval event
-    event Approval(address indexed owner, address indexed spender, uint256 amount);
-
     /**
      * @notice Construct a new PFX token
      * @param _devAddress The initial account to grant all the tokens
      */
-    constructor(address _devAddress) public {
+    constructor(address _devAddress) {
         // All the tokens are sent to msg.sender
-        balances[msg.sender] = uint96(initialSupply);
+        balances[msg.sender] = uint96(totalSupply);
+
+        // The reflection address is temporarily set to msg.sender
+        reflectionAddress = msg.sender;
 
         // The dev address is the address which will receive the dev fees
         devAddress = _devAddress;
-        totalSupply = initialSupply;
 
-        burnFee = 370; // 0.27% = 1/370
-        devFee = 3333; // 0.03% = 1/3333
+        // Initial values for reflection and dev fees
+        reflectionFee = 300; // 3.0% = 300/10000
+        devFee = 50; // 0.5% = 50/10000
 
-        isBurning = true;
-        chargeDevFees = true;
+        // Initial value for the rewards threshold
+        rewardsThreshold = 5000; // 0.05% = 5000/10000000
 
+        // Turn on reflection and dev fees
+        isReflecting = true;
+        isChargingDevFees = true;
+
+        // Exclude contract creator address and dev address from fees
         isExcludedSrc[msg.sender] = true;
         isExcludedSrc[_devAddress] = true;
-
         isExcludedDst[msg.sender] = true;
         isExcludedDst[_devAddress] = true;
 
-        emit Transfer(address(0), _devAddress, initialSupply);
+        emit Transfer(address(0), msg.sender, totalSupply);
     }
 
     /**
@@ -431,7 +143,7 @@ contract Pfx is Ownable {
      * @param spender The address of the account spending the funds
      * @return The number of tokens approved
      */
-    function allowance(address account, address spender) external view returns (uint256) {
+    function allowance(address account, address spender) external view override returns (uint256) {
         return allowances[account][spender];
     }
 
@@ -443,12 +155,12 @@ contract Pfx is Ownable {
      * @param rawAmount The number of tokens that are approved (2^256-1 means infinite)
      * @return Whether or not the approval succeeded
      */
-    function approve(address spender, uint256 rawAmount) external returns (bool) {
+    function approve(address spender, uint256 rawAmount) external override returns (bool) {
         uint96 amount;
-        if (rawAmount == uint256(-1)) {
-            amount = uint96(-1);
+        if (rawAmount == type(uint256).max) {
+            amount = type(uint96).max;
         } else {
-            amount = safe96(rawAmount, 'Pfx::approve: amount exceeds 96 bits');
+            amount = safe96(rawAmount, 'PFX::approve: amount exceeds 96 bits');
         }
 
         allowances[msg.sender][spender] = amount;
@@ -458,7 +170,7 @@ contract Pfx is Ownable {
     }
 
     /**
-     * @notice Triggers an approval from owner to spends
+     * @notice Triggers an approval from owner to spend
      * @param owner The address to approve from
      * @param spender The address to be approved
      * @param rawAmount The number of tokens that are approved (2^256-1 means infinite)
@@ -475,23 +187,21 @@ contract Pfx is Ownable {
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) external {
+    ) external override {
         uint96 amount;
-        if (rawAmount == uint256(-1)) {
-            amount = uint96(-1);
+        if (rawAmount == type(uint256).max) {
+            amount = type(uint96).max;
         } else {
-            amount = safe96(rawAmount, 'Pfx::permit: amount exceeds 96 bits');
+            amount = safe96(rawAmount, 'PFX::permit: amount exceeds 96 bits');
         }
 
-        bytes32 domainSeparator =
-            keccak256(abi.encode(DOMAIN_TYPEHASH, keccak256(bytes(name)), getChainId(), address(this)));
-        bytes32 structHash =
-            keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, rawAmount, nonces[owner]++, deadline));
+        bytes32 domainSeparator = keccak256(abi.encode(DOMAIN_TYPEHASH, keccak256(bytes(name)), getChainId(), address(this)));
+        bytes32 structHash = keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, rawAmount, nonces[owner]++, deadline));
         bytes32 digest = keccak256(abi.encodePacked('\x19\x01', domainSeparator, structHash));
         address signatory = ecrecover(digest, v, r, s);
-        require(signatory != address(0), 'Pfx::permit: invalid signature');
-        require(signatory == owner, 'Pfx::permit: unauthorized');
-        require(now <= deadline, 'Pfx::permit: signature expired');
+        require(signatory != address(0), 'PFX::permit: invalid signature');
+        require(signatory == owner, 'PFX::permit: unauthorized');
+        require(block.timestamp <= deadline, 'PFX::permit: signature expired');
 
         allowances[owner][spender] = amount;
 
@@ -503,7 +213,7 @@ contract Pfx is Ownable {
      * @param account The address of the account to get the balance of
      * @return The number of tokens held
      */
-    function balanceOf(address account) external view returns (uint256) {
+    function balanceOf(address account) external view override returns (uint256) {
         return balances[account];
     }
 
@@ -513,8 +223,8 @@ contract Pfx is Ownable {
      * @param rawAmount The number of tokens to transfer
      * @return Whether or not the transfer succeeded
      */
-    function transfer(address dst, uint rawAmount) external returns (bool) {
-        uint96 amount = safe96(rawAmount, 'Pfx::transfer: amount exceeds 96 bits');
+    function transfer(address dst, uint256 rawAmount) external override returns (bool) {
+        uint96 amount = safe96(rawAmount, 'PFX::transfer: amount exceeds 96 bits');
         _transferTokens(msg.sender, dst, amount);
         return true;
     }
@@ -530,14 +240,19 @@ contract Pfx is Ownable {
         address src,
         address dst,
         uint256 rawAmount
-    ) external returns (bool) {
+    ) external override returns (bool) {
         address spender = msg.sender;
         uint96 spenderAllowance = allowances[src][spender];
-        uint96 amount = safe96(rawAmount, 'Pfx::approve: amount exceeds 96 bits');
+        uint96 amount = safe96(rawAmount, 'PFX::approve: amount exceeds 96 bits');
 
-        if (spender != src && spenderAllowance != uint96(-1)) {
-            uint96 newAllowance =
-                sub96(spenderAllowance, amount, 'Pfx::transferFrom: transfer amount exceeds spender allowance');
+        if (spender != src && spenderAllowance != type(uint96).max) {
+            require(spenderAllowance >= amount, 'PFX::transferFrom: transfer amount exceeds spender allowance');
+            uint96 newAllowance;
+
+            unchecked {
+                newAllowance = spenderAllowance - amount;
+            }
+
             allowances[src][spender] = newAllowance;
 
             emit Approval(src, spender, newAllowance);
@@ -551,7 +266,7 @@ contract Pfx is Ownable {
      * @notice Delegate votes from `msg.sender` to `delegatee`
      * @param delegatee The address to delegate votes to
      */
-    function delegate(address delegatee) public {
+    function delegate(address delegatee) public override {
         return _delegate(msg.sender, delegatee);
     }
 
@@ -571,15 +286,14 @@ contract Pfx is Ownable {
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) public {
-        bytes32 domainSeparator =
-            keccak256(abi.encode(DOMAIN_TYPEHASH, keccak256(bytes(name)), getChainId(), address(this)));
+    ) public override {
+        bytes32 domainSeparator = keccak256(abi.encode(DOMAIN_TYPEHASH, keccak256(bytes(name)), getChainId(), address(this)));
         bytes32 structHash = keccak256(abi.encode(DELEGATION_TYPEHASH, delegatee, nonce, expiry));
         bytes32 digest = keccak256(abi.encodePacked('\x19\x01', domainSeparator, structHash));
         address signatory = ecrecover(digest, v, r, s);
-        require(signatory != address(0), 'Pfx::delegateBySig: invalid signature');
-        require(nonce == nonces[signatory]++, 'Pfx::delegateBySig: invalid nonce');
-        require(now <= expiry, 'Pfx::delegateBySig: signature expired');
+        require(signatory != address(0), 'PFX::delegateBySig: invalid signature');
+        require(nonce == nonces[signatory]++, 'PFX::delegateBySig: invalid nonce');
+        require(block.timestamp <= expiry, 'PFX::delegateBySig: signature expired');
         return _delegate(signatory, delegatee);
     }
 
@@ -588,7 +302,7 @@ contract Pfx is Ownable {
      * @param account The address to get votes balance
      * @return The number of current votes for `account`
      */
-    function getCurrentVotes(address account) external view returns (uint96) {
+    function getCurrentVotes(address account) external view override returns (uint96) {
         uint32 nCheckpoints = numCheckpoints[account];
         return nCheckpoints > 0 ? checkpoints[account][nCheckpoints - 1].votes : 0;
     }
@@ -600,8 +314,8 @@ contract Pfx is Ownable {
      * @param blockNumber The block number to get the vote balance at
      * @return The number of votes the account had as of the given block
      */
-    function getPriorVotes(address account, uint256 blockNumber) public view returns (uint96) {
-        require(blockNumber < block.number, 'Pfx::getPriorVotes: not yet determined');
+    function getPriorVotes(address account, uint256 blockNumber) public view override returns (uint96) {
+        require(blockNumber < block.number, 'PFX::getPriorVotes: not yet determined');
 
         uint32 nCheckpoints = numCheckpoints[account];
         if (nCheckpoints == 0) {
@@ -621,7 +335,7 @@ contract Pfx is Ownable {
         uint32 lower = 0;
         uint32 upper = nCheckpoints - 1;
         while (upper > lower) {
-            uint32 center = upper - (upper - lower) / 2; // ceil, avoiding overflow
+            uint32 center = upper - (upper - lower) / 2; // Ceil, avoiding overflow
             Checkpoint memory cp = checkpoints[account][center];
             if (cp.fromBlock == blockNumber) {
                 return cp.votes;
@@ -650,7 +364,7 @@ contract Pfx is Ownable {
         address dst,
         uint96 amount
     ) internal {
-        require(src != address(0), 'Pfx::_transferTokens: cannot transfer from the zero address');
+        require(src != address(0), 'PFX::_transferTokens: cannot transfer from the zero address');
 
         if (isExcludedSrc[src] || isExcludedDst[dst]) _transferExcluded(src, dst, amount);
         else _transferStandard(src, dst, amount);
@@ -666,42 +380,34 @@ contract Pfx is Ownable {
         address dst,
         uint96 amount
     ) private {
-        uint96 burnAmount = 0;
+        uint96 reflectionAmount = 0;
         uint96 devAmount = 0;
 
         // Get 100% of the tokens
-        balances[src] = sub96(balances[src], amount, 'Pfx::_transferStandard: transfer amount exceeds balance');
+        require(balances[src] >= amount, 'PFX::_transferStandard: transfer amount exceeds balance');
 
-        if (isBurning) {
-            // Burn (100/burnFee)% = send them to the zero address
-            burnAmount = div96(amount, burnFee, 'Pfx::_transferStandard: burn calculation failed');
-            balances[address(0)] = add96(balances[address(0)], burnAmount, 'Pfx::_transferStandard: burn failed');
-            // Reduce the total supply accordingly
-            totalSupply = SafeMath.sub(
-                totalSupply,
-                uint256(burnAmount),
-                'Pfx::_transferStandard: total supply reduction failed'
-            );
+        unchecked {
+            balances[src] -= amount;
         }
 
-        if (chargeDevFees) {
-            // Send (100/devFee)%  to the dev wallet
-            devAmount = div96(amount, devFee);
-            balances[devAddress] = add96(
-                balances[devAddress],
-                devAmount,
-                'Pfx::_transferStandard: dev transfer failed'
-            );
+        if (isReflecting) {
+            // Calculate reflection amount
+            reflectionAmount = (amount * reflectionFee) / 10000;
+
+            // Send reflection amount to the reflection address
+            balances[reflectionAddress] += reflectionAmount;
+        }
+
+        if (isChargingDevFees) {
+            // Calculate dev amount
+            devAmount = (amount * devFee) / 10000;
+
+            // Send dev amount to the dev address
+            balances[devAddress] += devAmount;
         }
 
         // Send the rest to the recipient
-        uint96 rest =
-            sub96(
-                sub96(amount, burnAmount, 'Pfx::_transferStandard: transfer amount overflows - 1'),
-                devAmount,
-                'Pfx::_transferStandard: transfer amount overflows - 2'
-            );
-        balances[dst] = add96(balances[dst], rest, 'Pfx::_transferStandard: transfer amount overflows - 3');
+        balances[dst] += amount - reflectionAmount - devAmount;
     }
 
     // Internal transfer mechanism without fees
@@ -711,60 +417,98 @@ contract Pfx is Ownable {
         uint96 amount
     ) private {
         // Get 100% of the tokens
-        balances[src] = sub96(balances[src], amount, 'Pfx::_transferExcluded: transfer amount exceeds balance');
+        require(balances[src] >= amount, 'PFX::_transferExcluded: transfer amount exceeds balance');
+
+        unchecked {
+            balances[src] -= amount;
+        }
 
         // Send 100% to the recipient
-        balances[dst] = add96(balances[dst], amount, 'Pfx::_transferExcluded: transfer amount overflows');
+        balances[dst] += amount;
     }
 
-    function includeSrc(address account) public onlyOwner {
-        isExcludedSrc[account] = false;
+    // Includes a account in the reflection / dev fees as a sender. Only callable by the owner
+    function includeSrc(address account) public override onlyOwner {
+        delete isExcludedSrc[account];
+        emit IncludedSrc(account);
     }
 
-    function includeDst(address account) public onlyOwner {
-        isExcludedDst[account] = false;
+    // Includes a account in the reflection / dev fees as a recipient. Only callable by the owner
+    function includeDst(address account) public override onlyOwner {
+        delete isExcludedDst[account];
+        emit IncludedDst(account);
     }
 
-    function excludeSrc(address account) public onlyOwner {
+    // Excludes a account in the reflection / dev fees as a sender. Only callable by the owner
+    function excludeSrc(address account) public override onlyOwner {
         isExcludedSrc[account] = true;
+        emit ExcludedSrc(account);
     }
 
-    function excludeDst(address account) public onlyOwner {
+    // Excludes a account in the reflection / dev fees as a recipient. Only callable by the owner
+    function excludeDst(address account) public override onlyOwner {
         isExcludedDst[account] = true;
+        emit ExcludedDst(account);
     }
 
-    function setBurnFee(uint96 _burnFee) public onlyOwner {
-        // burnFee > maximumBurnFee => 1/burnFee < 1/maximumBurnFee
-        require(_burnFee > maximumBurnFee, 'Pfx::setBurnFee: new burn fee exceeds maximum burn fee');
-        burnFee = _burnFee;
+    // Sets a new reflection fee. Only callable by the owner
+    function setReflectionFee(uint96 _reflectionFee) public override onlyOwner {
+        require(_reflectionFee <= maximumReflectionFee, 'PFX::setReflectionFee: new reflection fee exceeds maximum reflection fee');
+        reflectionFee = _reflectionFee;
+        emit SetReflectionFee(_reflectionFee);
     }
 
-    function setDevFee(uint96 _devFee) public onlyOwner {
-        // devFee > maximumDevFee => 1/devFee < 1/maximumDevFee
-        require(_devFee > maximumDevFee, 'Pfx::setDevFee: new dev fee exceeds maximum dev fee');
+    // Sets a new dev fee. Only callable by the owner
+    function setDevFee(uint96 _devFee) public override onlyOwner {
+        require(_devFee <= maximumDevFee, 'PFX::setDevFee: new dev fee exceeds maximum dev fee');
         devFee = _devFee;
+        emit SetDevFee(_devFee);
     }
 
-    function setDevAddress(address _devAddress) public {
-        // Only callable by the dev fee address
-        require(msg.sender == devAddress, 'Pfx::setDevAddress: can only be called by the dev address');
+    // Sets a new rewards threshold. Only callable by the owner
+    function setRewardsThreshold(uint256 _rewardsThreshold) public override onlyOwner {
+        require(
+            _rewardsThreshold <= maximumRewardsThreshold,
+            'PFX::setRewardsThreshold: new rewards threshold exceeds maximum rewards threshold'
+        );
+        rewardsThreshold = _rewardsThreshold;
+        emit SetRewardsThreshold(_rewardsThreshold);
+    }
+
+    // Sets a new reflection address. Only callable by the owner
+    function setReflectionAddress(address _reflectionAddress) public override onlyOwner {
+        reflectionAddress = _reflectionAddress;
+        emit SetReflectionAddress(_reflectionAddress);
+    }
+
+    // Sets a new dev address. Only callable by the owner
+    function setDevAddress(address _devAddress) public override onlyOwner {
         devAddress = _devAddress;
+        emit SetDevAddress(_devAddress);
     }
 
-    function startBurning() public onlyOwner {
-        isBurning = true;
+    // Enables transferring tokens to the reflection address. Only callable by the owner
+    function startReflecting() public override onlyOwner {
+        isReflecting = true;
+        emit StartedReflecting();
     }
 
-    function stopBurning() public onlyOwner {
-        isBurning = false;
+    // Disables transferring tokens to the reflection address. Only callable by the owner
+    function stopReflecting() public override onlyOwner {
+        isReflecting = false;
+        emit StoppedReflecting();
     }
 
-    function startDevFees() public onlyOwner {
-        chargeDevFees = true;
+    // Enables transferring tokens to the dev address. Only callable by the owner
+    function startDevFees() public override onlyOwner {
+        isChargingDevFees = true;
+        emit StartedDevFees();
     }
 
-    function stopDevFees() public onlyOwner {
-        chargeDevFees = false;
+    // Disables transferring tokens to the dev address. Only callable by the owner
+    function stopDevFees() public override onlyOwner {
+        isChargingDevFees = false;
+        emit StoppedDevFees();
     }
 
     function _moveDelegates(
@@ -776,14 +520,14 @@ contract Pfx is Ownable {
             if (srcRep != address(0)) {
                 uint32 srcRepNum = numCheckpoints[srcRep];
                 uint96 srcRepOld = srcRepNum > 0 ? checkpoints[srcRep][srcRepNum - 1].votes : 0;
-                uint96 srcRepNew = sub96(srcRepOld, amount, 'Pfx::_moveVotes: vote amount underflows');
+                uint96 srcRepNew = srcRepOld - amount;
                 _writeCheckpoint(srcRep, srcRepNum, srcRepOld, srcRepNew);
             }
 
             if (dstRep != address(0)) {
                 uint32 dstRepNum = numCheckpoints[dstRep];
                 uint96 dstRepOld = dstRepNum > 0 ? checkpoints[dstRep][dstRepNum - 1].votes : 0;
-                uint96 dstRepNew = add96(dstRepOld, amount, 'Pfx::_moveVotes: vote amount overflows');
+                uint96 dstRepNew = dstRepOld + amount;
                 _writeCheckpoint(dstRep, dstRepNum, dstRepOld, dstRepNew);
             }
         }
@@ -795,7 +539,7 @@ contract Pfx is Ownable {
         uint96 oldVotes,
         uint96 newVotes
     ) internal {
-        uint32 blockNumber = safe32(block.number, 'Pfx::_writeCheckpoint: block number exceeds 32 bits');
+        uint32 blockNumber = safe32(block.number, 'PFX::_writeCheckpoint: block number exceeds 32 bits');
 
         if (nCheckpoints > 0 && checkpoints[delegatee][nCheckpoints - 1].fromBlock == blockNumber) {
             checkpoints[delegatee][nCheckpoints - 1].votes = newVotes;
@@ -817,43 +561,7 @@ contract Pfx is Ownable {
         return uint96(n);
     }
 
-    function add96(
-        uint96 a,
-        uint96 b,
-        string memory errorMessage
-    ) internal pure returns (uint96) {
-        uint96 c = a + b;
-        require(c >= a, errorMessage);
-        return c;
-    }
-
-    function sub96(
-        uint96 a,
-        uint96 b,
-        string memory errorMessage
-    ) internal pure returns (uint96) {
-        require(b <= a, errorMessage);
-        return a - b;
-    }
-
-    function div96(uint96 a, uint96 b) internal pure returns (uint96) {
-        return div96(a, b, 'SafeMath: division by zero (uint96)');
-    }
-
-    function div96(
-        uint96 a,
-        uint96 b,
-        string memory errorMessage
-    ) internal pure returns (uint96) {
-        // Solidity only automatically asserts when dividing by 0
-        require(b > 0, errorMessage);
-        uint96 c = a / b;
-        // assert(a == b * c + a % b); // There is no case in which this doesn't hold
-
-        return c;
-    }
-
-    function getChainId() internal pure returns (uint256) {
+    function getChainId() internal view returns (uint256) {
         uint256 chainId;
         assembly {
             chainId := chainid()

@@ -3,7 +3,7 @@ const Web3 = require('web3')
 const { IS_PRODUCTION, CHAIN_ID, getProvider } = require('./const')
 const { TEAM_TREASURY_MULTISIG_ADDR } = require('./governanceConstants')
 
-const pfx = require('../artifacts/contracts/PFX.sol/Pfx.json')
+const pfx = require('../artifacts/contracts/pfx/PFX.sol/Pfx.json')
 
 const chainId = IS_PRODUCTION ? CHAIN_ID.AVALANCHE : CHAIN_ID.FUJI
 
